@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/flutter_flow_chart.dart';
 
-/// Widget that use the element properties to display it on the dashboard scene.
 class SegmentHandler extends StatefulWidget {
-  ///
   const SegmentHandler({
     required this.pivot,
     required this.dashboard,
@@ -12,16 +10,9 @@ class SegmentHandler extends StatefulWidget {
     this.onPivotSecondaryPressed,
   });
 
-  ///
   final Pivot pivot;
-
-  ///
   final Dashboard dashboard;
-
-  ///
   final void Function(BuildContext context, Pivot position)? onPivotPressed;
-
-  ///
   final void Function(BuildContext context, Pivot position)?
       onPivotSecondaryPressed;
 
@@ -35,14 +26,12 @@ class _SegmentHandlerState extends State<SegmentHandler> {
   @override
   void initState() {
     super.initState();
-
     widget.pivot.addListener(_update);
   }
 
   @override
   void dispose() {
     widget.pivot.removeListener(_update);
-
     super.dispose();
   }
 
@@ -65,12 +54,9 @@ class _SegmentHandlerState extends State<SegmentHandler> {
             widget.pivot.pivot = details.offset - widget.dashboard.position;
           },
           child: GestureDetector(
-            onTap: () {
-              widget.onPivotPressed?.call(context, widget.pivot);
-            },
-            onSecondaryTap: () {
-              widget.onPivotSecondaryPressed?.call(context, widget.pivot);
-            },
+            onTap: () => widget.onPivotPressed?.call(context, widget.pivot),
+            onSecondaryTap: () =>
+                widget.onPivotSecondaryPressed?.call(context, widget.pivot),
             child: CircleAvatar(
               radius: widget.dashboard.zoomFactor * 5,
               foregroundColor: Colors.black,
@@ -87,29 +73,24 @@ class _SegmentHandlerState extends State<SegmentHandler> {
   }
 }
 
-///
 class Pivot extends ChangeNotifier {
-  ///
   Pivot(Offset pivot) : _pivot = pivot;
 
-  ///
   Pivot.fromMap(Map<String, dynamic> map)
       : _pivot = Offset(
           map['pivot.dx'] as double,
           map['pivot.dy'] as double,
         );
+
   Offset _pivot;
 
-  ///
   Offset get pivot => _pivot;
 
-  ///
   set pivot(Offset value) {
     _pivot = value;
     notifyListeners();
   }
 
-  ///
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'pivot.dx': _pivot.dx,
@@ -117,7 +98,6 @@ class Pivot extends ChangeNotifier {
     };
   }
 
-  ///
   void setScale(double scale, Offset focalPoint, double factor) {
     pivot = ((pivot - focalPoint) / scale) * factor + focalPoint;
   }

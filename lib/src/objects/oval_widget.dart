@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/src/elements/flow_element.dart';
-import 'package:flutter_flow_chart/src/objects/element_text_widget.dart';
 
-/// A kind of element
 class OvalWidget extends StatelessWidget {
-  ///
   const OvalWidget({
     required this.element,
+    required this.child,
     super.key,
   });
 
-  ///
   final FlowElement element;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +20,17 @@ class OvalWidget extends StatelessWidget {
         children: [
           CustomPaint(
             size: element.size,
-            painter: _OvalPainter(
-              element: element,
+            painter: _OvalPainter(element: element),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: child,
+              ),
             ),
           ),
-          ElementTextWidget(element: element),
         ],
       ),
     );
@@ -34,21 +38,18 @@ class OvalWidget extends StatelessWidget {
 }
 
 class _OvalPainter extends CustomPainter {
-  _OvalPainter({
-    required this.element,
-  });
+  _OvalPainter({required this.element});
+
   final FlowElement element;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    final path = Path();
-
-    paint
+    final paint = Paint()
       ..style = PaintingStyle.fill
       ..color = element.backgroundColor;
 
-    path.addOval(Rect.fromLTWH(0, 0, size.width, size.height));
+    final path = Path()..addOval(Rect.fromLTWH(0, 0, size.width, size.height));
+
     if (element.elevation > 0.01) {
       canvas.drawShadow(
         path.shift(Offset(element.elevation, element.elevation)),

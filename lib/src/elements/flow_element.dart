@@ -1,48 +1,23 @@
-// ignore_for_file: avoid_positional_boolean_parameters, avoid_dynamic_calls
-
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_flow_chart/flutter_flow_chart.dart';
 import 'package:flutter_flow_chart/src/elements/connection_params.dart';
+import 'package:flutter_flow_chart/src/common_types.dart';
 import 'package:uuid/uuid.dart';
 
-/// Kinf od element
 enum ElementKind {
-  ///
   rectangle,
-
-  ///
   diamond,
-
-  ///
   storage,
-
-  ///
   oval,
-
-  ///
   parallelogram,
-
-  ///
   hexagon,
 }
 
-/// Handler supported by elements
 enum Handler {
-  ///
   topCenter,
-
-  ///
   bottomCenter,
-
-  ///
   rightCenter,
-
-  ///
   leftCenter;
 
-  /// Convert to [Alignment]
   Alignment toAlignment() {
     switch (this) {
       case Handler.topCenter:
@@ -57,18 +32,13 @@ enum Handler {
   }
 }
 
-/// Class to store [ElementWidget]s and notify its changes
 class FlowElement extends ChangeNotifier {
-  ///
   FlowElement({
+    required this.data,
+    required this.builder,
     Offset position = Offset.zero,
     this.size = Size.zero,
-    this.text = '',
-    this.textColor = Colors.black,
-    this.fontFamily,
-    this.textSize = 24,
-    this.textIsBold = false,
-    this.kind = ElementKind.rectangle,
+    required this.kind,
     this.handlers = const [
       Handler.topCenter,
       Handler.bottomCenter,
@@ -84,23 +54,19 @@ class FlowElement extends ChangeNotifier {
   })  : next = next ?? [],
         id = const Uuid().v4(),
         isResizing = false,
-        // fixing offset issue under extreme scaling
         position = position -
             Offset(
               size.width / 2 + handlerSize / 2,
               size.height / 2 + handlerSize / 2,
             );
 
-  ///
-  factory FlowElement.fromMap(Map<String, dynamic> map) {
-    final e = FlowElement(
-      size: Size(map['size.width'] as double, map['size.height'] as double),
-      text: map['text'] as String,
-      textColor: Color(map['textColor'] as int),
-      fontFamily: map['fontFamily'] as String?,
-      textSize: map['textSize'] as double,
-      textIsBold: map['textIsBold'] as bool,
+  factory FlowElement.fromMap(
+      Map<String, dynamic> map, FlowElementBuilder builder) {
+    return FlowElement(
+      data: map['data'] as Map<String, dynamic>,
+      builder: builder,
       kind: ElementKind.values[map['kind'] as int],
+      size: Size(map['size.width'] as double, map['size.height'] as double),
       handlers: List<Handler>.from(
         (map['handlers'] as List<dynamic>).map<Handler>(
           (x) => Handler.values[x as int],
@@ -124,164 +90,53 @@ class FlowElement extends ChangeNotifier {
         map['positionDx'] as double,
         map['positionDy'] as double,
       );
-    return e;
   }
 
-  ///
-  factory FlowElement.fromJson(String source) =>
-      FlowElement.fromMap(json.decode(source) as Map<String, dynamic>);
-
-  /// Unique id set when adding a [FlowElement] with [Dashboard.addElement()]
   String id;
-
-  /// The position of the [FlowElement]
   Offset position;
-
-  /// The size of the [FlowElement]
   Size size;
-
-  /// Element text
-  String text;
-
-  /// Text color
-  Color textColor;
-
-  /// Text font family
-  String? fontFamily;
-
-  /// Text size
-  double textSize;
-
-  /// Makes text bold if true
-  bool textIsBold;
-
-  /// Element shape
+  Map<String, dynamic> data;
+  FlowElementBuilder builder;
   ElementKind kind;
-
-  /// Connection handlers
   List<Handler> handlers;
-
-  /// The size of element handlers
   double handlerSize;
-
-  /// Background color of the element
   Color backgroundColor;
-
-  /// Border color of the element
   Color borderColor;
-
-  /// Border thickness of the element
   double borderThickness;
-
-  /// Shadow elevation
   double elevation;
-
-  /// List of connections from this element
   List<ConnectionParams> next;
-
-  /// Element text
   bool isResizing;
 
-  @override
-  String toString() {
-    return 'kind: $kind  text: $text';
-  }
-
-  /// Get the handler center of this handler for the given alignment.
   Offset getHandlerPosition(Alignment alignment) {
-    // The zero position coordinate is the top-left of this element.
-    final ret = Offset(
+    return Offset(
       position.dx + (size.width * ((alignment.x + 1) / 2)) + handlerSize / 2,
       position.dy + (size.height * ((alignment.y + 1) / 2) + handlerSize / 2),
     );
-    return ret;
   }
 
-  /// When setting to true, a handler will disply at the element bottom right
-  /// to let the user to resize it. When finish it will disappear.
   void setIsResizing(bool resizing) {
     isResizing = resizing;
     notifyListeners();
   }
 
-  /// Sets a new scale
   void setScale(double currentZoom, double factor) {
     size = size / currentZoom * factor;
     handlerSize = handlerSize / currentZoom * factor;
-    textSize = textSize / currentZoom * factor;
     for (final element in next) {
       element.arrowParams.setScale(currentZoom, factor);
     }
-
     notifyListeners();
   }
 
-  /// Used internally to set an unique Uuid to this element
   void setId(String id) {
     this.id = id;
   }
 
-  /// Set text
-  void setText(String text) {
-    this.text = text;
-    notifyListeners();
-  }
-
-  /// Set text color
-  void setTextColor(Color color) {
-    textColor = color;
-    notifyListeners();
-  }
-
-  /// Set text font family
-  void setFontFamily(String? fontFamily) {
-    this.fontFamily = fontFamily;
-    notifyListeners();
-  }
-
-  /// Set text size
-  void setTextSize(double size) {
-    textSize = size;
-    notifyListeners();
-  }
-
-  /// Set text bold
-  void setTextIsBold(bool isBold) {
-    textIsBold = isBold;
-    notifyListeners();
-  }
-
-  /// Set background color
-  void setBackgroundColor(Color color) {
-    backgroundColor = color;
-    notifyListeners();
-  }
-
-  /// Set border color
-  void setBorderColor(Color color) {
-    borderColor = color;
-    notifyListeners();
-  }
-
-  /// Set border thickness
-  void setBorderThickness(double thickness) {
-    borderThickness = thickness;
-    notifyListeners();
-  }
-
-  /// Set elevation
-  void setElevation(double elevation) {
-    this.elevation = elevation;
-    notifyListeners();
-  }
-
-  /// Change element position in the dashboard
   void changePosition(Offset newPosition) {
     position = newPosition;
     notifyListeners();
   }
 
-  /// Change element size
   void changeSize(Size newSize) {
     size = newSize;
     if (size.width < 40) size = Size(40, size.height);
@@ -289,45 +144,48 @@ class FlowElement extends ChangeNotifier {
     notifyListeners();
   }
 
-  @override
-  bool operator ==(covariant FlowElement other) {
-    if (identical(this, other)) return true;
-
-    return other.id == id;
+  void setBackgroundColor(Color color) {
+    backgroundColor = color;
+    notifyListeners();
   }
 
-  @override
-  int get hashCode {
-    return position.hashCode ^
-        size.hashCode ^
-        text.hashCode ^
-        textColor.hashCode ^
-        fontFamily.hashCode ^
-        textSize.hashCode ^
-        textIsBold.hashCode ^
-        id.hashCode ^
-        kind.hashCode ^
-        handlers.hashCode ^
-        handlerSize.hashCode ^
-        backgroundColor.hashCode ^
-        borderColor.hashCode ^
-        borderThickness.hashCode ^
-        elevation.hashCode ^
-        next.hashCode;
+  void setBorderColor(Color color) {
+    borderColor = color;
+    notifyListeners();
   }
 
-  ///
+  void setBorderThickness(double thickness) {
+    borderThickness = thickness;
+    notifyListeners();
+  }
+
+  void setElevation(double newElevation) {
+    elevation = newElevation;
+    notifyListeners();
+  }
+
+  void setHandlerSize(double size) {
+    handlerSize = size;
+    notifyListeners();
+  }
+
+  void setKind(ElementKind newKind) {
+    kind = newKind;
+    notifyListeners();
+  }
+
+  void setData(Map<String, dynamic> newData) {
+    data = newData;
+    notifyListeners();
+  }
+
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'positionDx': position.dx,
       'positionDy': position.dy,
       'size.width': size.width,
       'size.height': size.height,
-      'text': text,
-      'textColor': textColor.value,
-      'fontFamily': fontFamily,
-      'textSize': textSize,
-      'textIsBold': textIsBold,
+      'data': data,
       'id': id,
       'kind': kind.index,
       'handlers': handlers.map((x) => x.index).toList(),
@@ -339,7 +197,4 @@ class FlowElement extends ChangeNotifier {
       'next': next.map((x) => x.toMap()).toList(),
     };
   }
-
-  ///
-  String toJson() => json.encode(toMap());
 }

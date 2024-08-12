@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/src/elements/flow_element.dart';
-import 'package:flutter_flow_chart/src/objects/element_text_widget.dart';
 
-/// A kind of element
 class HexagonWidget extends StatelessWidget {
-  ///
   const HexagonWidget({
     required this.element,
+    required this.child,
     super.key,
   });
 
-  ///
   final FlowElement element;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +20,17 @@ class HexagonWidget extends StatelessWidget {
         children: [
           CustomPaint(
             size: element.size,
-            painter: _HexagonPainter(
-              element: element,
+            painter: _HexagonPainter(element: element),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: child,
+              ),
             ),
           ),
-          ElementTextWidget(element: element),
         ],
       ),
     );
@@ -34,21 +38,17 @@ class HexagonWidget extends StatelessWidget {
 }
 
 class _HexagonPainter extends CustomPainter {
-  _HexagonPainter({
-    required this.element,
-  });
+  _HexagonPainter({required this.element});
+
   final FlowElement element;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    final path = Path();
-
-    paint
+    final paint = Paint()
       ..style = PaintingStyle.fill
       ..color = element.backgroundColor;
 
-    path
+    final path = Path()
       ..moveTo(0, size.height / 2)
       ..lineTo(size.width / 4, size.height)
       ..lineTo(size.width * 3 / 4, size.height)

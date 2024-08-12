@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/src/elements/flow_element.dart';
-import 'package:flutter_flow_chart/src/objects/element_text_widget.dart';
 
-/// A kind of element
 class ParallelogramWidget extends StatelessWidget {
-  ///
   const ParallelogramWidget({
     required this.element,
+    required this.child,
     super.key,
   });
 
-  ///
   final FlowElement element;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +20,17 @@ class ParallelogramWidget extends StatelessWidget {
         children: [
           CustomPaint(
             size: element.size,
-            painter: _ParallelogramPainter(
-              element: element,
+            painter: _ParallelogramPainter(element: element),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: child,
+              ),
             ),
           ),
-          ElementTextWidget(element: element),
         ],
       ),
     );
@@ -34,22 +38,17 @@ class ParallelogramWidget extends StatelessWidget {
 }
 
 class _ParallelogramPainter extends CustomPainter {
-  _ParallelogramPainter({
-    required this.element,
-  });
+  _ParallelogramPainter({required this.element});
 
   final FlowElement element;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    final path = Path();
-
-    paint
+    final paint = Paint()
       ..style = PaintingStyle.fill
       ..color = element.backgroundColor;
 
-    path
+    final path = Path()
       ..moveTo(size.width / 8, 0)
       ..lineTo(size.width, 0)
       ..lineTo(size.width - size.width / 8, size.height)

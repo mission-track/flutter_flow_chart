@@ -3,17 +3,15 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_flow_chart/flutter_flow_chart.dart';
 import 'package:star_menu/star_menu.dart';
 
-/// Popup menu for the 'element params" entry
 class ElementSettingsMenu extends StatelessWidget {
+  ElementSettingsMenu({
+    required this.element,
+    super.key,
+  })  : sliderThickness = ValueNotifier(element.borderThickness),
+        sliderElevation = ValueNotifier(element.elevation);
   final FlowElement element;
   final ValueNotifier<double> sliderThickness;
   final ValueNotifier<double> sliderElevation;
-
-  ElementSettingsMenu({
-    super.key,
-    required this.element,
-  })  : sliderThickness = ValueNotifier(element.borderThickness),
-        sliderElevation = ValueNotifier(element.elevation);
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +19,7 @@ class ElementSettingsMenu extends StatelessWidget {
       onTap: () {},
       child: StarMenu(
         params: StarMenuParameters.panel(context, columns: 2)
-            .copyWith(openDurationMs: 60, onHoverScale: 1.0),
+            .copyWith(openDurationMs: 60, onHoverScale: 1),
         items: _buildEntries(context),
         child: const Text('Element params'),
       ),
@@ -48,35 +46,33 @@ class ElementSettingsMenu extends StatelessWidget {
                 ),
               ),
             ),
-          )
+          ),
         ],
         params: const StarMenuParameters(centerOffset: Offset(-1000, -1000)),
       ),
-
-      /// Thickness
       ValueListenableBuilder<double>(
-          valueListenable: sliderThickness,
-          builder: (_, value, __) {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('thickness: '),
-                SizedBox(
-                  width: 200,
-                  height: 50,
-                  child: Slider.adaptive(
-                    value: value,
-                    min: 0,
-                    max: 25,
-                    onChanged: (v) {
-                      sliderThickness.value = v;
-                      element.setBorderThickness(value);
-                    },
-                  ),
+        valueListenable: sliderThickness,
+        builder: (_, value, __) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('thickness: '),
+              SizedBox(
+                width: 200,
+                height: 50,
+                child: Slider.adaptive(
+                  value: value,
+                  max: 25,
+                  onChanged: (v) {
+                    sliderThickness.value = v;
+                    element.setBorderThickness(value);
+                  },
                 ),
-              ],
-            );
-          }),
+              ),
+            ],
+          );
+        },
+      ),
       IconMenu(
         text: 'Border color',
         icon: CircleWidget(backgroundColor: element.borderColor),
@@ -95,49 +91,48 @@ class ElementSettingsMenu extends StatelessWidget {
                 ),
               ),
             ),
-          )
+          ),
         ],
         params: const StarMenuParameters(centerOffset: Offset(-1000, -1000)),
       ),
-
-      /// Elevation
       ValueListenableBuilder<double>(
-          valueListenable: sliderElevation,
-          builder: (_, value, __) {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('elevation: '),
-                SizedBox(
-                  width: 200,
-                  height: 50,
-                  child: Slider.adaptive(
-                    value: value,
-                    divisions: 16,
-                    min: -1,
-                    max: 15,
-                    onChanged: (v) {
-                      sliderElevation.value = v;
-                      element.setElevation(value);
-                    },
-                  ),
+        valueListenable: sliderElevation,
+        builder: (_, value, __) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('elevation: '),
+              SizedBox(
+                width: 200,
+                height: 50,
+                child: Slider.adaptive(
+                  value: value,
+                  divisions: 16,
+                  min: -1,
+                  max: 15,
+                  onChanged: (v) {
+                    sliderElevation.value = v;
+                    element.setElevation(value);
+                  },
                 ),
-              ],
-            );
-          }),
+              ),
+            ],
+          );
+        },
+      ),
     ];
   }
 }
 
 class IconMenu extends StatelessWidget {
-  final Widget icon;
-  final String text;
-
   const IconMenu({
-    super.key,
     required this.icon,
     required this.text,
+    super.key,
   });
+
+  final Widget icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -153,11 +148,6 @@ class IconMenu extends StatelessWidget {
 }
 
 class CircleWidget extends StatelessWidget {
-  final double width;
-  final double height;
-  final Color backgroundColor;
-  final Color borderColor;
-
   const CircleWidget({
     super.key,
     this.width = 48,
@@ -165,6 +155,11 @@ class CircleWidget extends StatelessWidget {
     this.backgroundColor = Colors.white,
     this.borderColor = Colors.black,
   });
+
+  final double width;
+  final double height;
+  final Color backgroundColor;
+  final Color borderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +174,6 @@ class CircleWidget extends StatelessWidget {
         border: Border.all(
           width: 2,
           color: borderColor,
-          style: BorderStyle.solid,
         ),
       ),
     );

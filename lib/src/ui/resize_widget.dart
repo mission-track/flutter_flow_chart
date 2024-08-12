@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/flutter_flow_chart.dart';
 import 'package:flutter_flow_chart/src/ui/handler_widget.dart';
 
-/// The widget to press and drag to resize the element
 class ResizeWidget extends StatefulWidget {
-  ///
   const ResizeWidget({
     required this.element,
     required this.dashboard,
@@ -12,13 +10,8 @@ class ResizeWidget extends StatefulWidget {
     super.key,
   });
 
-  ///
   final Dashboard dashboard;
-
-  ///
   final FlowElement element;
-
-  ///
   final Widget child;
 
   @override
@@ -28,6 +21,7 @@ class ResizeWidget extends StatefulWidget {
 class _ResizeWidgetState extends State<ResizeWidget> {
   late Size elementStartSize;
   late Offset elementStartPosition;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(

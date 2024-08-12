@@ -1,21 +1,16 @@
-// ignore: directives_ordering
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_flow_chart/src/dashboard.dart';
-import 'package:flutter_flow_chart/src/elements/flow_element.dart';
+import 'package:flutter_flow_chart/flutter_flow_chart.dart';
 import 'package:flutter_flow_chart/src/ui/draw_arrow.dart';
 import 'package:flutter_flow_chart/src/ui/element_widget.dart';
 import 'package:flutter_flow_chart/src/ui/grid_background.dart';
 import 'package:flutter_flow_chart/src/ui/segment_handler.dart';
+import 'package:flutter_flow_chart/src/common_types.dart';
 
-/// Main flow chart Widget.
-/// It displays the background grid, all the elements and connection lines
-class FlowChart extends StatefulWidget {
-  ///
+class FlowChart<T extends FlowElement> extends StatefulWidget {
   const FlowChart({
     required this.dashboard,
-    super.key,
     this.onElementPressed,
     this.onElementSecondaryTapped,
     this.onElementLongPressed,
@@ -32,104 +27,32 @@ class FlowChart extends StatefulWidget {
     this.onPivotSecondaryPressed,
     this.onScaleUpdate,
     this.onNewConnection,
+    super.key,
   });
 
-  /// callback for tap on dashboard
-  final void Function(BuildContext context, Offset position)? onDashboardTapped;
-
-  /// callback for long tap on dashboard
-  final void Function(BuildContext context, Offset position)?
-      onDashboardLongTapped;
-
-  /// callback for mouse right click on dashboard
-  final void Function(BuildContext context, Offset postision)?
-      onDashboardSecondaryTapped;
-
-  /// callback for mouse right click long press on dashboard
-  final void Function(BuildContext context, Offset position)?
-      onDashboardSecondaryLongTapped;
-
-  /// callback for element pressed
-  final void Function(
-    BuildContext context,
-    Offset position,
-    FlowElement element,
-  )? onElementPressed;
-
-  /// callback for mouse right click event on an element
-  final void Function(
-    BuildContext context,
-    Offset position,
-    FlowElement element,
-  )? onElementSecondaryTapped;
-
-  /// callback for element long pressed
-  final void Function(
-    BuildContext context,
-    Offset position,
-    FlowElement element,
-  )? onElementLongPressed;
-
-  /// callback for right click long press event on an element
-  final void Function(
-    BuildContext context,
-    Offset position,
-    FlowElement element,
-  )? onElementSecondaryLongTapped;
-
-  /// callback for onclick event of pivot
-  final void Function(BuildContext context, Pivot pivot)? onPivotPressed;
-
-  /// callback for secondary press event of pivot
-  final void Function(BuildContext context, Pivot pivot)?
-      onPivotSecondaryPressed;
-
-  /// callback for handler pressed
-  final void Function(
-    BuildContext context,
-    Offset position,
-    Handler handler,
-    FlowElement element,
-  )? onHandlerPressed;
-
-  /// callback for handler right click event
-  final void Function(
-    BuildContext context,
-    Offset position,
-    Handler handler,
-    FlowElement element,
-  )? onHandlerSecondaryTapped;
-
-  /// callback for handler right click long press event
-  final void Function(
-    BuildContext context,
-    Offset position,
-    Handler handler,
-    FlowElement element,
-  )? onHandlerSecondaryLongTapped;
-
-  /// callback for handler long pressed
-  final void Function(
-    BuildContext context,
-    Offset position,
-    Handler handler,
-    FlowElement element,
-  )? onHandlerLongPressed;
-
-  /// callback when adding a new connection
+  final DashboardCallback? onDashboardTapped;
+  final DashboardCallback? onDashboardLongTapped;
+  final DashboardCallback? onDashboardSecondaryTapped;
+  final DashboardCallback? onDashboardSecondaryLongTapped;
+  final ElementCallback? onElementPressed;
+  final ElementCallback? onElementSecondaryTapped;
+  final ElementCallback? onElementLongPressed;
+  final ElementCallback? onElementSecondaryLongTapped;
+  final PivotCallback? onPivotPressed;
+  final PivotCallback? onPivotSecondaryPressed;
+  final HandlerCallback? onHandlerPressed;
+  final HandlerCallback? onHandlerSecondaryTapped;
+  final HandlerCallback? onHandlerSecondaryLongTapped;
+  final HandlerCallback? onHandlerLongPressed;
   final ConnectionListener? onNewConnection;
-
-  /// main dashboard to use
-  final Dashboard dashboard;
-
-  /// Trigger for the scale change
+  final Dashboard<T> dashboard;
   final void Function(double scale)? onScaleUpdate;
 
   @override
   State<FlowChart> createState() => _FlowChartState();
 }
 
-class _FlowChartState extends State<FlowChart> {
+class _FlowChartState<T extends FlowElement> extends State<FlowChart<T>> {
   @override
   void initState() {
     super.initState();
@@ -163,209 +86,157 @@ class _FlowChartState extends State<FlowChart> {
 
   @override
   Widget build(BuildContext context) {
-    /// get dashboard position after first frame is drawn
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (mounted) {
-        final object = context.findRenderObject() as RenderBox?;
-        if (object != null) {
-          final translation = object.getTransformTo(null).getTranslation();
-          final size = object.semanticBounds.size;
-          final position = Offset(translation.x, translation.y);
+    WidgetsBinding.instance.addPostFrameCallback(_updateDashboardPosition);
 
-          widget.dashboard.setDashboardSize(size);
-          widget.dashboard.setDashboardPosition(position);
-        }
-      }
-    });
-
-    // disabling default browser context menu on web
     if (kIsWeb) BrowserContextMenu.disableContextMenu();
 
     final gridKey = GlobalKey();
     var tapDownPos = Offset.zero;
     var secondaryTapDownPos = Offset.zero;
+
     return ClipRect(
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Draw the grid
-          Positioned.fill(
-            child: GestureDetector(
-              onTapDown: (details) {
-                tapDownPos = details.localPosition;
-              },
-              onSecondaryTapDown: (details) {
-                secondaryTapDownPos = details.localPosition;
-              },
-              onTap: widget.onDashboardTapped == null
-                  ? null
-                  : () => widget.onDashboardTapped!(
-                        gridKey.currentContext!,
-                        tapDownPos,
-                      ),
-              onLongPress: widget.onDashboardLongTapped == null
-                  ? null
-                  : () => widget.onDashboardLongTapped!(
-                        gridKey.currentContext!,
-                        tapDownPos,
-                      ),
-              onSecondaryTap: () {
-                widget.onDashboardSecondaryTapped?.call(
-                  gridKey.currentContext!,
-                  secondaryTapDownPos,
-                );
-              },
-              onSecondaryLongPress: () {
-                widget.onDashboardSecondaryLongTapped?.call(
-                  gridKey.currentContext!,
-                  secondaryTapDownPos,
-                );
-              },
-              onScaleUpdate: (details) {
-                if (details.scale != 1) {
-                  widget.dashboard.setZoomFactor(
-                    details.scale + _oldScaleUpdateDelta,
-                    focalPoint: details.focalPoint,
-                  );
-                }
-
-                widget.dashboard.setDashboardPosition(
-                  widget.dashboard.position + details.focalPointDelta,
-                );
-                for (var i = 0; i < widget.dashboard.elements.length; i++) {
-                  widget.dashboard.elements[i].position +=
-                      details.focalPointDelta;
-                  for (final conn in widget.dashboard.elements[i].next) {
-                    for (final pivot in conn.pivots) {
-                      pivot.pivot += details.focalPointDelta;
-                    }
-                  }
-                }
-
-                widget.dashboard.gridBackgroundParams.offset =
-                    details.focalPointDelta;
-                setState(() {});
-              },
-              onScaleEnd: (details) {
-                _oldScaleUpdateDelta = widget.dashboard.zoomFactor - 1;
-              },
-              child: GridBackground(
-                key: gridKey,
-                params: widget.dashboard.gridBackgroundParams,
-              ),
-            ),
-          ),
-          // Draw elements
-          for (int i = 0; i < widget.dashboard.elements.length; i++)
-            ElementWidget(
-              key: UniqueKey(),
-              dashboard: widget.dashboard,
-              element: widget.dashboard.elements.elementAt(i),
-              onElementPressed: widget.onElementPressed == null
-                  ? null
-                  : (context, position) => widget.onElementPressed!(
-                        context,
-                        position,
-                        widget.dashboard.elements.elementAt(i),
-                      ),
-              onElementSecondaryTapped: widget.onElementSecondaryTapped == null
-                  ? null
-                  : (context, position) => widget.onElementSecondaryTapped!(
-                        context,
-                        position,
-                        widget.dashboard.elements.elementAt(i),
-                      ),
-              onElementLongPressed: widget.onElementLongPressed == null
-                  ? null
-                  : (context, position) => widget.onElementLongPressed!(
-                        context,
-                        position,
-                        widget.dashboard.elements.elementAt(i),
-                      ),
-              onElementSecondaryLongTapped:
-                  widget.onElementSecondaryLongTapped == null
-                      ? null
-                      : (context, position) =>
-                          widget.onElementSecondaryLongTapped!(
-                            context,
-                            position,
-                            widget.dashboard.elements.elementAt(i),
-                          ),
-              onHandlerPressed: widget.onHandlerPressed == null
-                  ? null
-                  : (context, position, handler, element) => widget
-                      .onHandlerPressed!(context, position, handler, element),
-              onHandlerSecondaryTapped: widget.onHandlerSecondaryTapped == null
-                  ? null
-                  : (context, position, handler, element) =>
-                      widget.onHandlerSecondaryTapped!(
-                        context,
-                        position,
-                        handler,
-                        element,
-                      ),
-              onHandlerLongPressed: widget.onHandlerLongPressed == null
-                  ? null
-                  : (context, position, handler, element) =>
-                      widget.onHandlerLongPressed!(
-                        context,
-                        position,
-                        handler,
-                        element,
-                      ),
-              onHandlerSecondaryLongTapped:
-                  widget.onHandlerSecondaryLongTapped == null
-                      ? null
-                      : (context, position, handler, element) =>
-                          widget.onHandlerSecondaryLongTapped!(
-                            context,
-                            position,
-                            handler,
-                            element,
-                          ),
-            ),
-          // Draw arrows
-          for (int i = 0; i < widget.dashboard.elements.length; i++)
-            for (int n = 0; n < widget.dashboard.elements[i].next.length; n++)
-              DrawArrow(
-                key: UniqueKey(),
-                srcElement: widget.dashboard.elements[i],
-                destElement: widget
-                    .dashboard.elements[widget.dashboard.findElementIndexById(
-                  widget.dashboard.elements[i].next[n].destElementId,
-                )],
-                arrowParams: widget.dashboard.elements[i].next[n].arrowParams,
-                pivots: widget.dashboard.elements[i].next[n].pivots,
-              ),
-            // drawing segment handlers
-            for (int i = 0; i < widget.dashboard.elements.length; i++)
-              for (int n = 0; n < widget.dashboard.elements[i].next.length; n++)
-                if (widget.dashboard.elements[i].next[n].arrowParams.style ==
-                    ArrowStyle.segmented)
-                  for (int j = 0;
-                      j < widget.dashboard.elements[i].next[n].pivots.length;
-                      j++)
-                    SegmentHandler(
-                      key: UniqueKey(),
-                      pivot: widget.dashboard.elements[i].next[n].pivots[j],
-                      dashboard: widget.dashboard,
-                      onPivotPressed: widget.onPivotPressed,
-                      onPivotSecondaryPressed: widget.onPivotSecondaryPressed,
-                    ),
-          // user drawing when connecting elements
+          _buildGridBackground(gridKey, tapDownPos, secondaryTapDownPos),
+          ..._buildElements(),
+          ..._buildArrows(),
+          ..._buildSegmentHandlers(),
           DrawingArrowWidget(style: widget.dashboard.defaultArrowStyle),
         ],
       ),
     );
   }
+
+  Widget _buildGridBackground(
+    GlobalKey gridKey,
+    Offset tapDownPos,
+    Offset secondaryTapDownPos,
+  ) {
+    return Positioned.fill(
+      child: GestureDetector(
+        onTapDown: (details) => tapDownPos = details.localPosition,
+        onSecondaryTapDown: (details) =>
+            secondaryTapDownPos = details.localPosition,
+        onTap: () =>
+            widget.onDashboardTapped?.call(gridKey.currentContext!, tapDownPos),
+        onLongPress: () => widget.onDashboardLongTapped
+            ?.call(gridKey.currentContext!, tapDownPos),
+        onSecondaryTap: () => widget.onDashboardSecondaryTapped
+            ?.call(gridKey.currentContext!, secondaryTapDownPos),
+        onSecondaryLongPress: () => widget.onDashboardSecondaryLongTapped
+            ?.call(gridKey.currentContext!, secondaryTapDownPos),
+        onScaleUpdate: _handleScaleUpdate,
+        onScaleEnd: _handleScaleEnd,
+        child: GridBackground(
+          key: gridKey,
+          params: widget.dashboard.gridBackgroundParams,
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildElements() {
+    return widget.dashboard.elements.map((element) {
+      return ElementWidget<T>(
+        key: ValueKey(element.id),
+        dashboard: widget.dashboard,
+        element: element,
+        onElementPressed: widget.onElementPressed,
+        onElementSecondaryTapped: widget.onElementSecondaryTapped,
+        onElementLongPressed: widget.onElementLongPressed,
+        onElementSecondaryLongTapped: widget.onElementSecondaryLongTapped,
+        onHandlerPressed: widget.onHandlerPressed,
+        onHandlerSecondaryTapped: widget.onHandlerSecondaryTapped,
+        onHandlerLongPressed: widget.onHandlerLongPressed,
+        onHandlerSecondaryLongTapped: widget.onHandlerSecondaryLongTapped,
+      );
+    }).toList();
+  }
+
+  List<Widget> _buildArrows() {
+    return widget.dashboard.elements.expand((element) {
+      return element.next.map((connection) {
+        final destElement =
+            widget.dashboard.findElementById(connection.destElementId);
+        if (destElement == null) return const SizedBox.shrink();
+        return DrawArrow(
+          key: ValueKey('${element.id}-${destElement.id}'),
+          srcElement: element,
+          destElement: destElement,
+          arrowParams: connection.arrowParams,
+          pivots: connection.pivots,
+        );
+      });
+    }).toList();
+  }
+
+  List<Widget> _buildSegmentHandlers() {
+    return widget.dashboard.elements.expand((element) {
+      return element.next
+          .where((connection) =>
+              connection.arrowParams.style == ArrowStyle.segmented)
+          .expand((connection) {
+        return connection.pivots.map((pivot) {
+          return SegmentHandler(
+            key: ValueKey(
+                '${element.id}-${connection.destElementId}-${pivot.hashCode}'),
+            pivot: pivot,
+            dashboard: widget.dashboard,
+            onPivotPressed: widget.onPivotPressed,
+            onPivotSecondaryPressed: widget.onPivotSecondaryPressed,
+          );
+        });
+      });
+    }).toList();
+  }
+
+  void _handleScaleUpdate(ScaleUpdateDetails details) {
+    if (details.scale != 1) {
+      widget.dashboard.setZoomFactor(
+        details.scale + _oldScaleUpdateDelta,
+        focalPoint: details.focalPoint,
+      );
+    }
+
+    widget.dashboard.setDashboardPosition(
+      widget.dashboard.position + details.focalPointDelta,
+    );
+    for (final element in widget.dashboard.elements) {
+      element.position += details.focalPointDelta;
+      for (final conn in element.next) {
+        for (final pivot in conn.pivots) {
+          pivot.pivot += details.focalPointDelta;
+        }
+      }
+    }
+
+    widget.dashboard.gridBackgroundParams.offset = details.focalPointDelta;
+    setState(() {});
+  }
+
+  void _handleScaleEnd(ScaleEndDetails details) {
+    _oldScaleUpdateDelta = widget.dashboard.zoomFactor - 1;
+  }
+
+  void _updateDashboardPosition(Duration timeStamp) {
+    if (mounted) {
+      final object = context.findRenderObject() as RenderBox?;
+      if (object != null) {
+        final translation = object.getTransformTo(null).getTranslation();
+        final size = object.semanticBounds.size;
+        final position = Offset(translation.x, translation.y);
+
+        widget.dashboard.setDashboardSize(size);
+        widget.dashboard.setDashboardPosition(position);
+      }
+    }
+  }
 }
 
-/// Widget to draw interactive connection when the user tap on handlers
 class DrawingArrowWidget extends StatefulWidget {
-  ///
   const DrawingArrowWidget({required this.style, super.key});
 
-  ///
   final ArrowStyle style;
 
   @override

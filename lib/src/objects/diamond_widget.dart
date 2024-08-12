@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/src/elements/flow_element.dart';
-import 'package:flutter_flow_chart/src/objects/element_text_widget.dart';
 
-/// A kind of element
 class DiamondWidget extends StatelessWidget {
-  ///
   const DiamondWidget({
     required this.element,
+    required this.child,
     super.key,
   });
 
-  ///
   final FlowElement element;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +24,15 @@ class DiamondWidget extends StatelessWidget {
               element: element,
             ),
           ),
-          ElementTextWidget(element: element),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: child,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -37,19 +43,17 @@ class _DiamondPainter extends CustomPainter {
   _DiamondPainter({
     required this.element,
   });
+
   final FlowElement element;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    final path = Path();
-
-    paint
+    final paint = Paint()
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.fill
       ..color = element.backgroundColor;
 
-    path
+    final path = Path()
       ..moveTo(size.width / 2, 0)
       ..lineTo(size.width, size.height / 2)
       ..lineTo(size.width / 2, size.height)

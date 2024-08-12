@@ -1,10 +1,7 @@
-// ignore_for_file: public_member_api_docs
-
 import 'package:example/element_settings_menu.dart';
 import 'package:example/text_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/flutter_flow_chart.dart';
-import 'package:path_provider/path_provider.dart' as path;
 import 'package:star_menu/star_menu.dart';
 
 void main() {
@@ -14,7 +11,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -28,7 +24,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-///
 class MyHomePage extends StatefulWidget {
   const MyHomePage({required this.title, super.key});
 
@@ -39,9 +34,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Dashboard dashboard = Dashboard();
+  Dashboard<TextFlowElement> dashboard = Dashboard();
 
-  /// Notifier for the tension slider
   final segmentedTension = ValueNotifier<double>(1);
 
   @override
@@ -67,11 +61,8 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: Colors.black12,
       body: Container(
         constraints: const BoxConstraints.expand(),
-        child: FlowChart(
+        child: FlowChart<TextFlowElement>(
           dashboard: dashboard,
-          onNewConnection: (p1, p2) {
-            debugPrint('new connection');
-          },
           onDashboardTapped: (context, position) {
             debugPrint('Dashboard tapped $position');
             _displayDashboardMenu(context, position);
@@ -92,29 +83,38 @@ class _MyHomePageState extends State<MyHomePage> {
             );
           },
           onElementLongPressed: (context, position, element) {
-            debugPrint('Element with "${element.text}" text '
+            TextFlowElement aux = element as TextFlowElement;
+            debugPrint('Element with "${aux.text}" text '
                 'long pressed');
           },
           onElementSecondaryLongTapped: (context, position, element) {
-            debugPrint('Element with "${element.text}" text '
+            TextFlowElement aux = element as TextFlowElement;
+            debugPrint('Element with "${aux.text}" text '
                 'long tapped with mouse right click');
           },
           onElementPressed: (context, position, element) {
-            debugPrint('Element with "${element.text}" text pressed');
-            _displayElementMenu(context, position, element);
+            TextFlowElement aux = element as TextFlowElement;
+            debugPrint('Element with "${aux.text}" text pressed');
+            _displayElementMenu(context, position, aux);
           },
           onElementSecondaryTapped: (context, position, element) {
-            debugPrint('Element with "${element.text}" text pressed');
-            _displayElementMenu(context, position, element);
+            TextFlowElement aux = element as TextFlowElement;
+            debugPrint('Element with "${aux.text}" text pressed');
+            _displayElementMenu(context, position, aux);
           },
           onHandlerPressed: (context, position, handler, element) {
+            TextFlowElement aux = element as TextFlowElement;
             debugPrint('handler pressed: position $position '
-                'handler $handler" of element $element');
-            _displayHandlerMenu(position, handler, element);
+                'handler $handler" of element $aux');
+            _displayHandlerMenu(position, handler, aux);
           },
           onHandlerLongPressed: (context, position, handler, element) {
             debugPrint('handler long pressed: position $position '
                 'handler $handler" of element $element');
+          },
+          onHandlerSecondaryLongTapped: (context, position, handler, element) {
+            debugPrint('handler long tapped with mouse right click: '
+                'position $position handler $handler" of element $element');
           },
           onPivotSecondaryPressed: (context, pivot) {
             dashboard.removeDissection(pivot);
@@ -132,11 +132,10 @@ class _MyHomePageState extends State<MyHomePage> {
   //* POPUP MENUS
   //*********************
 
-  /// Display a drop down menu when tapping on a handler
   void _displayHandlerMenu(
     Offset position,
     Handler handler,
-    FlowElement element,
+    TextFlowElement element,
   ) {
     StarMenuOverlay.displayStarMenu(
       context,
@@ -236,11 +235,10 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  /// Display a drop down menu when tapping on an element
   void _displayElementMenu(
     BuildContext context,
     Offset position,
-    FlowElement element,
+    TextFlowElement element,
   ) {
     StarMenuOverlay.displayStarMenu(
       context,
@@ -300,8 +298,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  /// Display a linear menu for the dashboard
-  /// with menu entries built with [menuEntries]
   void _displayDashboardMenu(BuildContext context, Offset position) {
     StarMenuOverlay.displayStarMenu(
       context,
@@ -314,7 +310,6 @@ class _MyHomePageState extends State<MyHomePage> {
             alignment: LinearAlignment.left,
             space: 10,
           ),
-          // calculate the offset from the dashboard center
           centerOffset: position -
               Offset(
                 dashboard.dashboardSize.width / 2,
@@ -328,7 +323,7 @@ class _MyHomePageState extends State<MyHomePage> {
             label: const Text('Add diamond'),
             onPressed: () {
               dashboard.addElement(
-                FlowElement(
+                TextFlowElement(
                   position: position,
                   size: const Size(80, 80),
                   text: '${dashboard.elements.length}',
@@ -348,12 +343,11 @@ class _MyHomePageState extends State<MyHomePage> {
             label: const Text('Add rect'),
             onPressed: () {
               dashboard.addElement(
-                FlowElement(
+                TextFlowElement(
                   position: position,
                   size: const Size(100, 50),
                   text: '${dashboard.elements.length}',
                   handlerSize: 25,
-                  kind: ElementKind.rectangle,
                   handlers: [
                     Handler.bottomCenter,
                     Handler.topCenter,
@@ -368,7 +362,7 @@ class _MyHomePageState extends State<MyHomePage> {
             label: const Text('Add oval'),
             onPressed: () {
               dashboard.addElement(
-                FlowElement(
+                TextFlowElement(
                   position: position,
                   size: const Size(100, 50),
                   text: '${dashboard.elements.length}',
@@ -388,7 +382,7 @@ class _MyHomePageState extends State<MyHomePage> {
             label: const Text('Add parallelogram'),
             onPressed: () {
               dashboard.addElement(
-                FlowElement(
+                TextFlowElement(
                   position: position,
                   size: const Size(100, 50),
                   text: '${dashboard.elements.length}',
@@ -406,7 +400,7 @@ class _MyHomePageState extends State<MyHomePage> {
             label: const Text('Add hexagon'),
             onPressed: () {
               dashboard.addElement(
-                FlowElement(
+                TextFlowElement(
                   position: position,
                   size: const Size(150, 100),
                   text: '${dashboard.elements.length}',
@@ -426,7 +420,7 @@ class _MyHomePageState extends State<MyHomePage> {
             label: const Text('Add storage'),
             onPressed: () {
               dashboard.addElement(
-                FlowElement(
+                TextFlowElement(
                   position: position,
                   size: const Size(100, 150),
                   text: '${dashboard.elements.length}',
@@ -450,15 +444,19 @@ class _MyHomePageState extends State<MyHomePage> {
           ActionChip(
             label: const Text('SAVE dashboard'),
             onPressed: () async {
-              final appDocDir = await path.getApplicationDocumentsDirectory();
-              dashboard.saveDashboard('${appDocDir.path}/FLOWCHART.json');
+              final data = dashboard.elements.map((x) => x.toMap());
+              debugPrint(data.toList().toString());
             },
           ),
           ActionChip(
             label: const Text('LOAD dashboard'),
             onPressed: () async {
-              final appDocDir = await path.getApplicationDocumentsDirectory();
-              dashboard.loadDashboard('${appDocDir.path}/FLOWCHART.json');
+              final data = dashboard.elements.map((x) => x.toMap()).toList();
+              final elements = data.map((x) => TextFlowElement.fromMap(x));
+              dashboard.elements
+                ..clear()
+                ..addAll(elements);
+              dashboard.recenter();
             },
           ),
         ],

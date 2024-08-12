@@ -1,18 +1,16 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/src/elements/flow_element.dart';
-import 'package:flutter_flow_chart/src/objects/element_text_widget.dart';
 
-/// A kind of element
 class StorageWidget extends StatelessWidget {
-  ///
   const StorageWidget({
     required this.element,
+    required this.child,
     super.key,
   });
 
-  ///
   final FlowElement element;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -23,11 +21,17 @@ class StorageWidget extends StatelessWidget {
         children: [
           CustomPaint(
             size: element.size,
-            painter: _StoragePainter(
-              element: element,
+            painter: _StoragePainter(element: element),
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: child,
+              ),
             ),
           ),
-          ElementTextWidget(element: element),
         ],
       ),
     );
@@ -35,52 +39,42 @@ class StorageWidget extends StatelessWidget {
 }
 
 class _StoragePainter extends CustomPainter {
-  _StoragePainter({
-    required this.element,
-  });
+  _StoragePainter({required this.element});
 
   final FlowElement element;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    final path = Path();
-    final path2 = Path();
-
-    paint
+    final paint = Paint()
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.fill
       ..color = element.backgroundColor;
 
-    path2
+    final path = Path()
       ..moveTo(size.width, size.height / 4.0 / 2.0)
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..lineTo(0, size.height / 4.0 / 2.0)
-
-      // oval
       ..addArc(Rect.fromLTWH(0, 0, size.width, size.height / 4.0), pi, pi)
       ..addArc(Rect.fromLTWH(0, 0, size.width, size.height / 4.0), 0, pi)
       ..addArc(Rect.fromLTWH(0, 4, size.width, size.height / 4.0 + 4), 0, pi);
 
     if (element.elevation > 0.01) {
       canvas.drawShadow(
-        path2.shift(Offset(element.elevation, element.elevation)),
+        path.shift(Offset(element.elevation, element.elevation)),
         Colors.black,
         element.elevation,
         true,
       );
     }
-    canvas.drawPath(path2, paint);
+    canvas.drawPath(path, paint);
 
     paint
       ..strokeWidth = element.borderThickness
       ..color = element.borderColor
       ..style = PaintingStyle.stroke;
 
-    canvas
-      ..drawPath(path, paint)
-      ..drawPath(path2, paint);
+    canvas.drawPath(path, paint);
   }
 
   @override

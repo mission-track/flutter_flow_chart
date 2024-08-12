@@ -3,19 +3,17 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_flow_chart/flutter_flow_chart.dart';
 import 'package:star_menu/star_menu.dart';
 
-/// Popup menu for the 'element params" entry
 class TextMenu extends StatelessWidget {
-  final FlowElement element;
-  final ValueNotifier<double> sliderSize;
-  final ValueNotifier<bool> isBold;
-  final TextEditingController textController;
-
   TextMenu({
-    super.key,
     required this.element,
+    super.key,
   })  : sliderSize = ValueNotifier(element.textSize),
         isBold = ValueNotifier(element.textIsBold),
         textController = TextEditingController(text: element.text);
+  final TextFlowElement element;
+  final ValueNotifier<double> sliderSize;
+  final ValueNotifier<bool> isBold;
+  final TextEditingController textController;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +22,7 @@ class TextMenu extends StatelessWidget {
       child: StarMenu(
         params: StarMenuParameters.panel(context, columns: 1).copyWith(
           openDurationMs: 60,
-          onHoverScale: 1.0,
+          onHoverScale: 1,
           centerOffset: const Offset(100, 100),
         ),
         items: _buildEntries(context),
@@ -41,15 +39,13 @@ class TextMenu extends StatelessWidget {
           controller: textController,
           textAlign: TextAlign.center,
           textAlignVertical: TextAlignVertical.center,
-          minLines: null,
           maxLines: null,
-          onChanged: (value) => element.setText(value),
+          onChanged: element.setText,
         ),
       ),
       Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          /// text color
           IconMenu(
             text: 'Color',
             icon: CircleWidget(backgroundColor: element.textColor),
@@ -68,36 +64,33 @@ class TextMenu extends StatelessWidget {
                     ),
                   ),
                 ),
-              )
+              ),
             ],
             params: const StarMenuParameters(
               centerOffset: Offset(-1000, -1000),
             ),
           ),
           const SizedBox(width: 30),
-
-          /// is bold
           ValueListenableBuilder<bool>(
-              valueListenable: isBold,
-              builder: (_, value, __) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('bold '),
-                    Checkbox(
-                      value: value,
-                      onChanged: ((value) {
-                        isBold.value = value!;
-                        element.setTextIsBold(value);
-                      }),
-                    ),
-                  ],
-                );
-              }),
+            valueListenable: isBold,
+            builder: (_, value, __) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('bold '),
+                  Checkbox(
+                    value: value,
+                    onChanged: (value) {
+                      isBold.value = value!;
+                      element.setTextIsBold(value);
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
         ],
       ),
-
-      /// size
       ValueListenableBuilder<double>(
         valueListenable: sliderSize,
         builder: (_, value, __) {
@@ -127,14 +120,14 @@ class TextMenu extends StatelessWidget {
 }
 
 class IconMenu extends StatelessWidget {
-  final Widget icon;
-  final String text;
-
   const IconMenu({
-    super.key,
     required this.icon,
     required this.text,
+    super.key,
   });
+
+  final Widget icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -150,11 +143,6 @@ class IconMenu extends StatelessWidget {
 }
 
 class CircleWidget extends StatelessWidget {
-  final double width;
-  final double height;
-  final Color backgroundColor;
-  final Color borderColor;
-
   const CircleWidget({
     super.key,
     this.width = 48,
@@ -162,6 +150,11 @@ class CircleWidget extends StatelessWidget {
     this.backgroundColor = Colors.white,
     this.borderColor = Colors.black,
   });
+
+  final double width;
+  final double height;
+  final Color backgroundColor;
+  final Color borderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +169,6 @@ class CircleWidget extends StatelessWidget {
         border: Border.all(
           width: 2,
           color: borderColor,
-          style: BorderStyle.solid,
         ),
       ),
     );

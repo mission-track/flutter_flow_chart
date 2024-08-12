@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/flutter_flow_chart.dart';
+import 'package:flutter_flow_chart/src/common_types.dart';
 import 'package:flutter_flow_chart/src/objects/diamond_widget.dart';
 import 'package:flutter_flow_chart/src/objects/hexagon_widget.dart';
 import 'package:flutter_flow_chart/src/objects/oval_widget.dart';
@@ -9,9 +10,7 @@ import 'package:flutter_flow_chart/src/objects/storage_widget.dart';
 import 'package:flutter_flow_chart/src/ui/element_handlers.dart';
 import 'package:flutter_flow_chart/src/ui/resize_widget.dart';
 
-/// Widget that use [element] properties to display it on the dashboard scene
-class ElementWidget extends StatefulWidget {
-  ///
+class ElementWidget<T extends FlowElement> extends StatefulWidget {
   const ElementWidget({
     required this.dashboard,
     required this.element,
@@ -26,65 +25,22 @@ class ElementWidget extends StatefulWidget {
     this.onHandlerSecondaryLongTapped,
   });
 
-  ///
-  final Dashboard dashboard;
-
-  ///
-  final FlowElement element;
-
-  ///
-  final void Function(BuildContext context, Offset position)? onElementPressed;
-
-  ///
-  final void Function(BuildContext context, Offset position)?
-      onElementSecondaryTapped;
-
-  ///
-  final void Function(BuildContext context, Offset position)?
-      onElementLongPressed;
-
-  ///
-  final void Function(BuildContext context, Offset position)?
-      onElementSecondaryLongTapped;
-
-  ///
-  final void Function(
-    BuildContext context,
-    Offset position,
-    Handler handler,
-    FlowElement element,
-  )? onHandlerPressed;
-
-  ///
-  final void Function(
-    BuildContext context,
-    Offset position,
-    Handler handler,
-    FlowElement element,
-  )? onHandlerSecondaryTapped;
-
-  ///
-  final void Function(
-    BuildContext context,
-    Offset position,
-    Handler handler,
-    FlowElement element,
-  )? onHandlerLongPressed;
-
-  ///
-  final void Function(
-    BuildContext context,
-    Offset position,
-    Handler handler,
-    FlowElement element,
-  )? onHandlerSecondaryLongTapped;
+  final Dashboard<T> dashboard;
+  final T element;
+  final ElementCallback? onElementPressed;
+  final ElementCallback? onElementSecondaryTapped;
+  final ElementCallback? onElementLongPressed;
+  final ElementCallback? onElementSecondaryLongTapped;
+  final HandlerCallback? onHandlerPressed;
+  final HandlerCallback? onHandlerSecondaryTapped;
+  final HandlerCallback? onHandlerLongPressed;
+  final HandlerCallback? onHandlerSecondaryLongTapped;
 
   @override
-  State<ElementWidget> createState() => _ElementWidgetState();
+  State<ElementWidget<T>> createState() => _ElementWidgetState<T>();
 }
 
-class _ElementWidgetState extends State<ElementWidget> {
-  // local widget touch position when start dragging
+class _ElementWidgetState<T extends FlowElement> extends State<ElementWidget<T>> {
   Offset delta = Offset.zero;
 
   @override
@@ -105,21 +61,29 @@ class _ElementWidgetState extends State<ElementWidget> {
 
   @override
   Widget build(BuildContext context) {
-    Widget element;
+    Widget elementContent = widget.element
+        .builder(context, widget.element.data, widget.element.kind);
 
+    Widget shapeWidget;
     switch (widget.element.kind) {
       case ElementKind.diamond:
-        element = DiamondWidget(element: widget.element);
+        shapeWidget =
+            DiamondWidget(element: widget.element, child: elementContent);
       case ElementKind.storage:
-        element = StorageWidget(element: widget.element);
+        shapeWidget =
+            StorageWidget(element: widget.element, child: elementContent);
       case ElementKind.oval:
-        element = OvalWidget(element: widget.element);
+        shapeWidget =
+            OvalWidget(element: widget.element, child: elementContent);
       case ElementKind.parallelogram:
-        element = ParallelogramWidget(element: widget.element);
+        shapeWidget =
+            ParallelogramWidget(element: widget.element, child: elementContent);
       case ElementKind.hexagon:
-        element = HexagonWidget(element: widget.element);
+        shapeWidget =
+            HexagonWidget(element: widget.element, child: elementContent);
       case ElementKind.rectangle:
-        element = RectangleWidget(element: widget.element);
+        shapeWidget =
+            RectangleWidget(element: widget.element, child: elementContent);
     }
 
     if (widget.element.isResizing) {
@@ -128,14 +92,14 @@ class _ElementWidgetState extends State<ElementWidget> {
         child: ResizeWidget(
           element: widget.element,
           dashboard: widget.dashboard,
-          child: element,
+          child: shapeWidget,
         ),
       );
     }
 
-    element = Padding(
+    shapeWidget = Padding(
       padding: EdgeInsets.all(widget.element.handlerSize / 2),
-      child: element,
+      child: shapeWidget,
     );
 
     var tapLocation = Offset.zero;
@@ -148,31 +112,33 @@ class _ElementWidgetState extends State<ElementWidget> {
         onSecondaryTapDown: (details) =>
             secondaryTapDownPos = details.globalPosition,
         onTap: () {
-          widget.onElementPressed?.call(context, tapLocation);
+          widget.onElementPressed?.call(context, tapLocation, widget.element);
         },
         onSecondaryTap: () {
-          widget.onElementSecondaryTapped?.call(context, secondaryTapDownPos);
+          widget.onElementSecondaryTapped
+              ?.call(context, secondaryTapDownPos, widget.element);
         },
         onLongPress: () {
-          widget.onElementLongPressed?.call(context, tapLocation);
+          widget.onElementLongPressed
+              ?.call(context, tapLocation, widget.element);
         },
         onSecondaryLongPress: () {
           widget.onElementSecondaryLongTapped
-              ?.call(context, secondaryTapDownPos);
+              ?.call(context, secondaryTapDownPos, widget.element);
         },
         child: Listener(
           onPointerDown: (event) {
             delta = event.localPosition;
           },
-          child: Draggable<FlowElement>(
+          child: Draggable<T>(
             data: widget.element,
             dragAnchorStrategy: childDragAnchorStrategy,
             childWhenDragging: const SizedBox.shrink(),
             feedback: Material(
               color: Colors.transparent,
-              child: element,
+              child: shapeWidget,
             ),
-            child: ElementHandlers(
+            child: ElementHandlers<T>(
               dashboard: widget.dashboard,
               element: widget.element,
               handlerSize: widget.element.handlerSize,
@@ -180,7 +146,7 @@ class _ElementWidgetState extends State<ElementWidget> {
               onHandlerSecondaryTapped: widget.onHandlerSecondaryTapped,
               onHandlerLongPressed: widget.onHandlerLongPressed,
               onHandlerSecondaryLongTapped: widget.onHandlerSecondaryLongTapped,
-              child: element,
+              child: shapeWidget,
             ),
             onDragUpdate: (details) {
               widget.element.changePosition(
@@ -188,8 +154,9 @@ class _ElementWidgetState extends State<ElementWidget> {
               );
             },
             onDragEnd: (details) {
-              widget.element
-                  .changePosition(details.offset - widget.dashboard.position);
+              widget.element.changePosition(
+                details.offset - widget.dashboard.position,
+              );
             },
           ),
         ),

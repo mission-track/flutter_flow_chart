@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// The arrow tip.
 class HandlerWidget extends StatelessWidget {
-  ///
   const HandlerWidget({
     required this.width,
     required this.height,
@@ -12,19 +10,10 @@ class HandlerWidget extends StatelessWidget {
     this.icon,
   });
 
-  ///
   final double width;
-
-  ///
   final double height;
-
-  ///
   final Color backgroundColor;
-
-  ///
   final Color borderColor;
-
-  ///
   final Widget? icon;
 
   @override
@@ -34,9 +23,7 @@ class HandlerWidget extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.all(
-          Radius.circular(width),
-        ),
+        borderRadius: BorderRadius.all(Radius.circular(width)),
         border: Border.all(
           width: 2,
           color: borderColor,
