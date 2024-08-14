@@ -19,6 +19,7 @@ class ElementWidget<T extends FlowElement> extends StatefulWidget {
     this.onElementSecondaryTapped,
     this.onElementLongPressed,
     this.onElementSecondaryLongTapped,
+    this.onElementMoved,
     this.onHandlerPressed,
     this.onHandlerSecondaryTapped,
     this.onHandlerLongPressed,
@@ -31,6 +32,7 @@ class ElementWidget<T extends FlowElement> extends StatefulWidget {
   final ElementCallback? onElementSecondaryTapped;
   final ElementCallback? onElementLongPressed;
   final ElementCallback? onElementSecondaryLongTapped;
+  final ElementCallback? onElementMoved;
   final HandlerCallback? onHandlerPressed;
   final HandlerCallback? onHandlerSecondaryTapped;
   final HandlerCallback? onHandlerLongPressed;
@@ -154,9 +156,9 @@ class _ElementWidgetState<T extends FlowElement> extends State<ElementWidget<T>>
               );
             },
             onDragEnd: (details) {
-              widget.element.changePosition(
-                details.offset - widget.dashboard.position,
-              );
+              final newPosition = details.offset - widget.dashboard.position;
+              widget.element.changePosition(newPosition);
+              widget.onElementMoved?.call(context, newPosition, widget.element);
             },
           ),
         ),

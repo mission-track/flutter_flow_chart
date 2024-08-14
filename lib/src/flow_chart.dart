@@ -15,6 +15,7 @@ class FlowChart<T extends FlowElement> extends StatefulWidget {
     this.onElementSecondaryTapped,
     this.onElementLongPressed,
     this.onElementSecondaryLongTapped,
+    this.onElementMoved,
     this.onDashboardTapped,
     this.onDashboardSecondaryTapped,
     this.onDashboardLongTapped,
@@ -38,6 +39,7 @@ class FlowChart<T extends FlowElement> extends StatefulWidget {
   final ElementCallback? onElementSecondaryTapped;
   final ElementCallback? onElementLongPressed;
   final ElementCallback? onElementSecondaryLongTapped;
+  final ElementCallback? onElementMoved;
   final PivotCallback? onPivotPressed;
   final PivotCallback? onPivotSecondaryPressed;
   final HandlerCallback? onHandlerPressed;
@@ -146,6 +148,7 @@ class _FlowChartState<T extends FlowElement> extends State<FlowChart<T>> {
         onElementSecondaryTapped: widget.onElementSecondaryTapped,
         onElementLongPressed: widget.onElementLongPressed,
         onElementSecondaryLongTapped: widget.onElementSecondaryLongTapped,
+        onElementMoved: widget.onElementMoved,
         onHandlerPressed: widget.onHandlerPressed,
         onHandlerSecondaryTapped: widget.onHandlerSecondaryTapped,
         onHandlerLongPressed: widget.onHandlerLongPressed,
