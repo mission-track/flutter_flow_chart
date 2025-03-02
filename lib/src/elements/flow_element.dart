@@ -29,6 +29,9 @@ enum ElementKind {
 
   ///
   image,
+  
+  ///
+  custom,
 }
 
 /// Handler supported by elements
@@ -84,6 +87,7 @@ class FlowElement extends ChangeNotifier {
     this.borderThickness = 3,
     this.elevation = 4,
     this.data,
+    this.customElementType,
     this.isDraggable = true,
     this.isResizable = false,
     this.isConnectable = true,
@@ -119,6 +123,7 @@ class FlowElement extends ChangeNotifier {
       borderColor: Color(map['borderColor'] as int),
       borderThickness: map['borderThickness'] as double,
       elevation: map['elevation'] as double,
+      customElementType: map['customElementType'] as String?,
       next: (map['next'] as List).isNotEmpty
           ? List<ConnectionParams>.from(
               (map['next'] as List<dynamic>).map<dynamic>(
@@ -209,9 +214,32 @@ class FlowElement extends ChangeNotifier {
 
   /// Kind-specific data
   final dynamic data;
+  
+  /// Custom element type identifier for ElementKind.custom
+  final String? customElementType;
 
   /// Kind-specific data to load/save
   String? serializedData;
+
+  /// Flag to indicate if the element is being scaled (zoom operation)
+  /// or transformed as part of a view transformation (pan, zoom, recenter)
+  /// This is used to prevent triggering modification callbacks during view transformations
+  bool _isScaling = false;
+
+  /// Returns true if the element is currently being scaled or transformed
+  /// as part of a view transformation (pan, zoom, recenter)
+  bool get isScaling => _isScaling;
+
+  /// Set the scaling flag to indicate a view transformation is in progress
+  /// This prevents triggering modification callbacks during view transformations
+  void setScalingFlag() {
+    _isScaling = true;
+  }
+
+  /// Reset the scaling flag after a view transformation is complete
+  void resetScalingFlag() {
+    _isScaling = false;
+  }
 
   @override
   String toString() {
@@ -237,7 +265,9 @@ class FlowElement extends ChangeNotifier {
       element.arrowParams.setScale(currentZoom, factor);
     }
 
+    setScalingFlag();
     notifyListeners();
+    resetScalingFlag();
   }
 
   /// Used internally to set an unique Uuid to this element
@@ -364,6 +394,7 @@ class FlowElement extends ChangeNotifier {
       'borderThickness': borderThickness,
       'elevation': elevation,
       'data': serializedData,
+      'customElementType': customElementType,
       'next': next.map((x) => x.toMap()).toList(),
       'isDraggable': isDraggable,
       'isResizable': isResizable,

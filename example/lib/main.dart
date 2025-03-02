@@ -45,6 +45,25 @@ class _MyHomePageState extends State<MyHomePage> {
   /// Notifier for the tension slider
   final segmentedTension = ValueNotifier<double>(1);
 
+  /// Text controller for URL input
+  final urlController = TextEditingController();
+
+  /// Notifier for the image opacity slider
+  final imageOpacity = ValueNotifier<double>(1.0);
+
+  @override
+  void initState() {
+    super.initState();
+    dashboard.registerCustomElement('cloud', (element) => _CloudWidget(element: element));
+  }
+
+  @override
+  void dispose() {
+    urlController.dispose();
+    imageOpacity.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -317,6 +336,198 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  /// Get a sample image URL that works well with CORS
+  String _getSampleImageUrl() {
+    // List of sample image URLs that are known to work well with CORS
+    final sampleUrls = [
+      'https://images.unsplash.com/photo-1579546929518-9e396f3cc809',
+      'https://images.pexels.com/photos/255379/pexels-photo-255379.jpeg',
+      'https://source.unsplash.com/random/1200x800/?nature',
+    ];
+    
+    // Select a random sample URL
+    return sampleUrls[DateTime.now().millisecondsSinceEpoch % sampleUrls.length];
+  }
+
+  /// Display a dialog to enter a URL for the background image
+  void _showBackgroundImageUrlDialog() {
+    final TextEditingController controller = TextEditingController();
+    bool isLoading = false;
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Set Background Image from URL'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter image URL',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Suggest a sample URL
+                      controller.text = _getSampleImageUrl();
+                    },
+                    child: const Text('Suggest Sample URL'),
+                  ),
+                  if (isLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (controller.text.isNotEmpty) {
+                            setState(() {
+                              isLoading = true;
+                            });
+                            
+                            try {
+                              final image = await loadImageFromUrl(controller.text);
+                              if (image != null) {
+                                dashboard.gridBackgroundParams.setBackgroundImage(image);
+                                dashboard.notifyListeners();
+                                Navigator.of(context).pop();
+                              } else {
+                                // Show error message if image loading failed
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Failed to load image. Please try a different URL.'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              // Show error message if an exception occurred
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error: ${e.toString()}'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            } finally {
+                              setState(() {
+                                isLoading = false;
+                              });
+                            }
+                          }
+                        },
+                  child: const Text('Set'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Display a dialog to adjust background image settings
+  Future<void> _showBackgroundImageSettingsDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Background Image Settings'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Toggle grid visibility
+                    SwitchListTile(
+                      title: const Text('Show Grid'),
+                      value: dashboard.gridBackgroundParams.showGrid,
+                      onChanged: (value) {
+                        setState(() {
+                          dashboard.gridBackgroundParams.setShowGrid(value);
+                          dashboard.notifyListeners();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Image opacity slider
+                    const Text('Image Opacity'),
+                    ValueListenableBuilder<double>(
+                      valueListenable: imageOpacity,
+                      builder: (_, value, __) {
+                        return Slider(
+                          value: value,
+                          min: 0.0,
+                          max: 1.0,
+                          divisions: 10,
+                          label: value.toStringAsFixed(1),
+                          onChanged: (newValue) {
+                            setState(() {
+                              imageOpacity.value = newValue;
+                              dashboard.gridBackgroundParams.setImageOpacity(newValue);
+                              dashboard.notifyListeners();
+                            });
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Image fit options
+                    const Text('Image Fit'),
+                    DropdownButton<BoxFit>(
+                      value: dashboard.gridBackgroundParams.imageFit,
+                      onChanged: (BoxFit? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            dashboard.gridBackgroundParams.setImageFit(newValue);
+                            dashboard.notifyListeners();
+                          });
+                        }
+                      },
+                      items: BoxFit.values.map<DropdownMenuItem<BoxFit>>((BoxFit value) {
+                        return DropdownMenuItem<BoxFit>(
+                          value: value,
+                          child: Text(value.toString().split('.').last),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   /// Display a linear menu for the dashboard
   void _displayDashboardMenu(BuildContext context, Offset position) {
     StarMenuOverlay.displayStarMenu(
@@ -502,6 +713,31 @@ class _MyHomePageState extends State<MyHomePage> {
             },
           ),
           ActionChip(
+            label: const Text('Add custom element'),
+            onPressed: () async {
+              final element = createCustomElement(
+                customElementType: 'cloud',
+                position: position,
+                text: 'Cloud',
+                borderColor: Colors.blue,
+                isResizable: true,
+                isDeletable: true,
+              );
+              
+              setState(() {
+                dashboard.addElement(element);
+              });
+            },
+          ),
+          ActionChip(
+            label: const Text('Set background image from URL'),
+            onPressed: _showBackgroundImageUrlDialog,
+          ),
+          ActionChip(
+            label: const Text('Background image settings'),
+            onPressed: () => _showBackgroundImageSettingsDialog(context),
+          ),
+          ActionChip(
             label: const Text('Remove all'),
             onPressed: () {
               dashboard.removeAllElements();
@@ -518,5 +754,178 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
     );
+  }
+
+  /// Create a FlowElement with a custom element type
+  FlowElement createCustomElement({
+    required String customElementType,
+    Offset position = Offset.zero,
+    Size size = const Size(150, 100),
+    String text = '',
+    Color textColor = const Color(0xFF000000),
+    String? fontFamily,
+    double textSize = 24,
+    bool textIsBold = false,
+    List<Handler> handlers = const [
+      Handler.topCenter,
+      Handler.bottomCenter,
+      Handler.rightCenter,
+      Handler.leftCenter,
+    ],
+    double handlerSize = 15.0,
+    Color backgroundColor = const Color(0xFFFFFFFF),
+    Color borderColor = const Color(0xFF2196F3),
+    double borderThickness = 3,
+    double elevation = 4,
+    dynamic data,
+    bool isDraggable = true,
+    bool isResizable = false,
+    bool isConnectable = true,
+    bool isDeletable = false,
+  }) {
+    return FlowElement(
+      position: position,
+      size: size,
+      text: text,
+      textColor: textColor,
+      fontFamily: fontFamily,
+      textSize: textSize,
+      textIsBold: textIsBold,
+      kind: ElementKind.custom,
+      handlers: handlers,
+      handlerSize: handlerSize,
+      backgroundColor: backgroundColor,
+      borderColor: borderColor,
+      borderThickness: borderThickness,
+      elevation: elevation,
+      data: data,
+      customElementType: customElementType,
+      isDraggable: isDraggable,
+      isResizable: isResizable,
+      isConnectable: isConnectable,
+      isDeletable: isDeletable,
+    );
+  }
+}
+
+/// A cloud-shaped element
+class _CloudWidget extends StatelessWidget {
+  /// Constructor
+  const _CloudWidget({
+    required this.element,
+  });
+
+  /// The element to render
+  final FlowElement element;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: element.elevation,
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          CustomPaint(
+            size: element.size,
+            painter: _CloudPainter(
+              backgroundColor: element.backgroundColor,
+              borderColor: element.borderColor,
+              borderThickness: element.borderThickness,
+            ),
+          ),
+          SizedBox(
+            width: element.size.width,
+            height: element.size.height,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  element.text,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: element.textColor,
+                    fontSize: element.textSize,
+                    fontWeight: element.textIsBold ? FontWeight.bold : FontWeight.normal,
+                    fontFamily: element.fontFamily,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Custom painter for cloud shape
+class _CloudPainter extends CustomPainter {
+  /// Constructor
+  _CloudPainter({
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.borderThickness,
+  });
+
+  /// Background color
+  final Color backgroundColor;
+
+  /// Border color
+  final Color borderColor;
+
+  /// Border thickness
+  final double borderThickness;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = backgroundColor
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    
+    // Draw a cloud shape
+    final width = size.width;
+    final height = size.height;
+    
+    // Calculate circle radii based on size
+    final r1 = height * 0.3;
+    final r2 = height * 0.4;
+    final r3 = height * 0.3;
+    final r4 = height * 0.35;
+    
+    // Define circle centers
+    final c1 = Offset(width * 0.25, height * 0.4);
+    final c2 = Offset(width * 0.5, height * 0.3);
+    final c3 = Offset(width * 0.75, height * 0.4);
+    final c4 = Offset(width * 0.6, height * 0.7);
+    final c5 = Offset(width * 0.4, height * 0.7);
+    
+    // Draw circles to form cloud
+    path.addOval(Rect.fromCircle(center: c1, radius: r1));
+    path.addOval(Rect.fromCircle(center: c2, radius: r2));
+    path.addOval(Rect.fromCircle(center: c3, radius: r3));
+    path.addOval(Rect.fromCircle(center: c4, radius: r4));
+    path.addOval(Rect.fromCircle(center: c5, radius: r4));
+    
+    canvas.drawPath(path, paint);
+    
+    // Draw border
+    if (borderThickness > 0) {
+      final borderPaint = Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = borderThickness;
+      
+      canvas.drawPath(path, borderPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return oldDelegate is! _CloudPainter ||
+        oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.borderColor != borderColor ||
+        oldDelegate.borderThickness != borderThickness;
   }
 }

@@ -110,6 +110,85 @@ FlowChart(
     | _changePosition_     | Change element position in the dashboard                                                                                             |
     | _changeSize_         | Change element size                                                                                                                  |
 
+## Custom Elements
+
+Starting from version 4.0.0, you can create and use custom elements in your flow chart. This allows you to extend the library with your own shapes and designs.
+
+### Creating a Custom Element
+
+1. Create a widget that takes a `FlowElement` and renders it:
+
+```dart
+class MyCustomWidget extends StatelessWidget {
+  const MyCustomWidget({required this.element, super.key});
+  
+  final FlowElement element;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: element.elevation,
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          CustomPaint(
+            size: element.size,
+            painter: MyCustomPainter(
+              backgroundColor: element.backgroundColor,
+              borderColor: element.borderColor,
+              borderThickness: element.borderThickness,
+            ),
+          ),
+          SizedBox(
+            width: element.size.width,
+            height: element.size.height,
+            child: Center(
+              child: Text(
+                element.text,
+                style: TextStyle(
+                  color: element.textColor,
+                  fontSize: element.textSize,
+                  fontWeight: element.textIsBold ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class MyCustomPainter extends CustomPainter {
+  // Your custom painter implementation
+}
+```
+
+2. Register your custom element using the Dashboard instance:
+
+```dart
+// Register your custom element with the dashboard
+dashboard.registerCustomElement('my_custom_type', (element) => MyCustomWidget(element: element));
+```
+
+3. Create and use your custom element:
+
+```dart
+// Create a custom element using the dashboard
+final customElement = FlowElement(
+  kind: ElementKind.custom,
+  customElementType: 'cloud',
+  position: position,
+  text: 'Cloud',
+  borderColor: Colors.blue,
+  isResizable: true,
+  isDeletable: true,
+);
+
+// Add the custom element to the dashboard
+dashboard.addElement(customElement);
+```
+
 # Examples
 
 ## Add an element to Dashboard

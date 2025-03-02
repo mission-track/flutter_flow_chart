@@ -19,6 +19,9 @@ dependencies:
   # https://pub.dev/packages/flutter_colorpicker
   flutter_colorpicker: ^1.0.3
 
+  # https://pub.dev/packages/http
+  http: ^1.1.0
+
   # https://pub.dev/packages/path_provider
   path_provider: ^2.1.3
 

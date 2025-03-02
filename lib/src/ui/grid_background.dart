@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 /// Defines grid parameters.
@@ -9,6 +11,10 @@ class GridBackgroundParams extends ChangeNotifier {
     this.secondarySquareStep = 5,
     this.backgroundColor = Colors.white,
     this.gridColor = Colors.black12,
+    this.backgroundImage,
+    this.showGrid = true,
+    this.imageOpacity = 1.0,
+    this.imageFit = BoxFit.cover,
     void Function(double scale)? onScaleUpdate,
   }) : rawGridSquareSize = gridSquare {
     if (onScaleUpdate != null) {
@@ -24,6 +30,9 @@ class GridBackgroundParams extends ChangeNotifier {
       secondarySquareStep: map['secondarySquareStep'] as int? ?? 5,
       backgroundColor: Color(map['backgroundColor'] as int? ?? 0xFFFFFFFF),
       gridColor: Color(map['gridColor'] as int? ?? 0xFFFFFFFF),
+      showGrid: map['showGrid'] as bool? ?? true,
+      imageOpacity: map['imageOpacity'] as double? ?? 1.0,
+      imageFit: _boxFitFromString(map['imageFit'] as String? ?? 'cover'),
     )
       ..scale = map['scale'] as double? ?? 1.0
       .._offset = Offset(
@@ -32,6 +41,46 @@ class GridBackgroundParams extends ChangeNotifier {
       );
 
     return params;
+  }
+
+  /// Helper method to convert string to BoxFit enum
+  static BoxFit _boxFitFromString(String value) {
+    switch (value) {
+      case 'contain':
+        return BoxFit.contain;
+      case 'fill':
+        return BoxFit.fill;
+      case 'fitHeight':
+        return BoxFit.fitHeight;
+      case 'fitWidth':
+        return BoxFit.fitWidth;
+      case 'none':
+        return BoxFit.none;
+      case 'scaleDown':
+        return BoxFit.scaleDown;
+      default:
+        return BoxFit.cover;
+    }
+  }
+
+  /// Helper method to convert BoxFit enum to string
+  static String _boxFitToString(BoxFit fit) {
+    switch (fit) {
+      case BoxFit.contain:
+        return 'contain';
+      case BoxFit.cover:
+        return 'cover';
+      case BoxFit.fill:
+        return 'fill';
+      case BoxFit.fitHeight:
+        return 'fitHeight';
+      case BoxFit.fitWidth:
+        return 'fitWidth';
+      case BoxFit.none:
+        return 'none';
+      case BoxFit.scaleDown:
+        return 'scaleDown';
+    }
   }
 
   /// Unscaled size of the grid square
@@ -49,6 +98,18 @@ class GridBackgroundParams extends ChangeNotifier {
 
   /// Grid lines color.
   final Color gridColor;
+
+  /// Background image for the grid
+  ui.Image? backgroundImage;
+
+  /// Whether to show the grid lines
+  bool showGrid;
+
+  /// Opacity of the background image (0.0 to 1.0)
+  double imageOpacity;
+
+  /// How to fit the background image
+  BoxFit imageFit;
 
   /// offset to move the grid
   Offset _offset = Offset.zero;
@@ -88,6 +149,30 @@ class GridBackgroundParams extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set the background image
+  void setBackgroundImage(ui.Image? image) {
+    backgroundImage = image;
+    notifyListeners();
+  }
+
+  /// Set whether to show the grid
+  void setShowGrid(bool show) {
+    showGrid = show;
+    notifyListeners();
+  }
+
+  /// Set the opacity of the background image
+  void setImageOpacity(double opacity) {
+    imageOpacity = opacity.clamp(0.0, 1.0);
+    notifyListeners();
+  }
+
+  /// Set how to fit the background image
+  void setImageFit(BoxFit fit) {
+    imageFit = fit;
+    notifyListeners();
+  }
+
   /// size of the grid square with scale applied
   double get gridSquare => rawGridSquareSize * scale;
 
@@ -105,6 +190,9 @@ class GridBackgroundParams extends ChangeNotifier {
       'secondarySquareStep': secondarySquareStep,
       'backgroundColor': backgroundColor.value,
       'gridColor': gridColor.value,
+      'showGrid': showGrid,
+      'imageOpacity': imageOpacity,
+      'imageFit': _boxFitToString(imageFit),
     };
   }
 }
@@ -158,6 +246,132 @@ class _GridBackgroundPainter extends CustomPainter {
       paint,
     );
 
+    // Draw background image if available
+    if (params.backgroundImage != null) {
+      _drawBackgroundImage(canvas, size, params.backgroundImage!);
+    }
+
+    // Only draw grid if showGrid is true
+    if (params.showGrid) {
+      _drawGrid(canvas, size);
+    }
+  }
+
+  void _drawBackgroundImage(Canvas canvas, Size size, ui.Image image) {
+    final paint = Paint()
+      ..filterQuality = FilterQuality.medium
+      ..color = Colors.white.withOpacity(params.imageOpacity);
+
+    final srcRect = Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
+    final destRect = Rect.fromLTWH(0, 0, size.width, size.height);
+    
+    // Apply different fitting based on imageFit
+    final Rect finalRect;
+    switch (params.imageFit) {
+      case BoxFit.cover:
+        finalRect = _coverRect(srcRect, destRect);
+        break;
+      case BoxFit.contain:
+        finalRect = _containRect(srcRect, destRect);
+        break;
+      case BoxFit.fill:
+        finalRect = destRect;
+        break;
+      case BoxFit.fitWidth:
+        finalRect = _fitWidthRect(srcRect, destRect);
+        break;
+      case BoxFit.fitHeight:
+        finalRect = _fitHeightRect(srcRect, destRect);
+        break;
+      case BoxFit.none:
+        finalRect = Rect.fromLTWH(
+          destRect.left,
+          destRect.top,
+          srcRect.width,
+          srcRect.height,
+        );
+        break;
+      case BoxFit.scaleDown:
+        final containRect = _containRect(srcRect, destRect);
+        finalRect = srcRect.width <= destRect.width && srcRect.height <= destRect.height
+            ? Rect.fromLTWH(
+                destRect.left,
+                destRect.top,
+                srcRect.width,
+                srcRect.height,
+              )
+            : containRect;
+        break;
+    }
+
+    canvas.drawImageRect(image, srcRect, finalRect, paint);
+  }
+
+  Rect _coverRect(Rect srcRect, Rect destRect) {
+    final double srcAspectRatio = srcRect.width / srcRect.height;
+    final double destAspectRatio = destRect.width / destRect.height;
+
+    final double width;
+    final double height;
+    
+    if (srcAspectRatio > destAspectRatio) {
+      height = destRect.height;
+      width = height * srcAspectRatio;
+    } else {
+      width = destRect.width;
+      height = width / srcAspectRatio;
+    }
+
+    final double left = destRect.left + (destRect.width - width) / 2;
+    final double top = destRect.top + (destRect.height - height) / 2;
+    
+    return Rect.fromLTWH(left, top, width, height);
+  }
+
+  Rect _containRect(Rect srcRect, Rect destRect) {
+    final double srcAspectRatio = srcRect.width / srcRect.height;
+    final double destAspectRatio = destRect.width / destRect.height;
+
+    final double width;
+    final double height;
+    
+    if (srcAspectRatio < destAspectRatio) {
+      height = destRect.height;
+      width = height * srcAspectRatio;
+    } else {
+      width = destRect.width;
+      height = width / srcAspectRatio;
+    }
+
+    final double left = destRect.left + (destRect.width - width) / 2;
+    final double top = destRect.top + (destRect.height - height) / 2;
+    
+    return Rect.fromLTWH(left, top, width, height);
+  }
+
+  Rect _fitWidthRect(Rect srcRect, Rect destRect) {
+    final double srcAspectRatio = srcRect.width / srcRect.height;
+    final double width = destRect.width;
+    final double height = width / srcAspectRatio;
+    final double left = destRect.left;
+    final double top = destRect.top + (destRect.height - height) / 2;
+    
+    return Rect.fromLTWH(left, top, width, height);
+  }
+
+  Rect _fitHeightRect(Rect srcRect, Rect destRect) {
+    final double srcAspectRatio = srcRect.width / srcRect.height;
+    final double height = destRect.height;
+    final double width = height * srcAspectRatio;
+    final double left = destRect.left + (destRect.width - width) / 2;
+    final double top = destRect.top;
+    
+    return Rect.fromLTWH(left, top, width, height);
+  }
+
+  void _drawGrid(Canvas canvas, Size size) {
+    final paint = Paint();
+    
     // grid
     paint.color = params.gridColor;
     paint.style = PaintingStyle.stroke;
@@ -196,7 +410,11 @@ class _GridBackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GridBackgroundPainter oldDelegate) {
-    debugPrint('shouldRepaint ${oldDelegate.dx} $dx ${oldDelegate.dy} $dy');
-    return oldDelegate.dx != dx || oldDelegate.dy != dy;
+    return oldDelegate.dx != dx || 
+           oldDelegate.dy != dy || 
+           oldDelegate.params.showGrid != params.showGrid ||
+           oldDelegate.params.backgroundImage != params.backgroundImage ||
+           oldDelegate.params.imageOpacity != params.imageOpacity ||
+           oldDelegate.params.imageFit != params.imageFit;
   }
 }

@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_flow_chart/flutter_flow_chart.dart';
 import 'package:flutter_flow_chart/src/ui/segment_handler.dart';
+import 'package:flutter_flow_chart/src/elements/custom_element_registry.dart';
 import 'package:uuid/uuid.dart';
 
 /// Listener definition for a new connection
@@ -15,6 +16,11 @@ typedef ConnectionListener = void Function(
   FlowElement srcElement,
   FlowElement destElement,
 );
+
+/// Listener definition for element modification
+/// This listener is only triggered for actual element modifications,
+/// not for view transformations like zooming, panning, or recentering.
+typedef ElementModificationListener = void Function(FlowElement element);
 
 /// Class to store all the scene elements.
 /// This also acts as the controller to the flow_chart widget
@@ -119,6 +125,61 @@ class Dashboard extends ChangeNotifier {
   /// remove connection listener
   void removeConnectionListener(ConnectionListener listener) {
     _connectionListeners.remove(listener);
+  }
+
+  final List<ElementModificationListener> _elementModificationListeners = [];
+  
+  /// Add listener called when an element is modified
+  void addElementModificationListener(ElementModificationListener listener) {
+    _elementModificationListeners.add(listener);
+  }
+  
+  /// Remove element modification listener
+  void removeElementModificationListener(ElementModificationListener listener) {
+    _elementModificationListeners.remove(listener);
+  }
+  
+  /// Notify all element modification listeners
+  void notifyElementModified(FlowElement element) {
+    for (final listener in _elementModificationListeners) {
+      listener(element);
+    }
+  }
+
+  /// Notify all element modification listeners for a batch of elements
+  /// This is useful for operations that modify multiple elements at once,
+  /// to avoid triggering multiple callbacks for what is logically a single operation.
+  void notifyElementsModified(List<FlowElement> elements) {
+    if (elements.isEmpty) return;
+    
+    // If there's only one element, use the single element notification
+    if (elements.length == 1) {
+      notifyElementModified(elements.first);
+      return;
+    }
+    
+    // Otherwise, notify each listener once with the list of elements
+    for (final listener in _elementModificationListeners) {
+      // Call the listener for each element
+      for (final element in elements) {
+        listener(element);
+      }
+    }
+  }
+
+  /// Register a custom element widget builder with a unique identifier
+  void registerCustomElement(String customElementType, CustomElementWidgetBuilder builder) {
+    CustomElementRegistry.instance.register(customElementType, builder);
+  }
+
+  /// Unregister a custom element widget builder
+  void unregisterCustomElement(String customElementType) {
+    CustomElementRegistry.instance.unregister(customElementType);
+  }
+
+  /// Get all registered custom element types
+  List<String> getRegisteredCustomElementTypes() {
+    return CustomElementRegistry.instance.registeredTypes;
   }
 
   /// set grid background parameters
@@ -591,12 +652,15 @@ class Dashboard extends ChangeNotifier {
     if (elements.isNotEmpty) {
       final currentDeviation = elements.first.position - center;
       for (final element in elements) {
+        element.setScalingFlag();
         element.position -= currentDeviation;
         for (final next in element.next) {
           for (final pivot in next.pivots) {
             pivot.pivot -= currentDeviation;
           }
         }
+        element.notifyListeners();
+        element.resetScalingFlag();
       }
     }
     notifyListeners();
@@ -640,5 +704,32 @@ class Dashboard extends ChangeNotifier {
       ..addAll(loadedElements);
 
     recenter();
+  }
+
+  /// Update element positions during panning without triggering modification notifications
+  /// This method is used during view transformations like panning to update element positions
+  /// without triggering modification callbacks, as these are not actual
+  /// element modifications but rather view transformations.
+  void updateElementPositionsForPan(Offset delta) {
+    for (final element in elements) {
+      // Set the flag to indicate this is a view transformation
+      element.setScalingFlag();
+      
+      // Update position
+      element.position += delta;
+      
+      // Update connection pivots
+      for (final conn in element.next) {
+        for (final pivot in conn.pivots) {
+          pivot.pivot += delta;
+        }
+      }
+      
+      // Notify listeners but don't trigger modification callbacks
+      element.notifyListeners();
+      
+      // Reset the flag
+      element.resetScalingFlag();
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_flow_chart/flutter_flow_chart.dart';
+import 'package:flutter_flow_chart/src/elements/custom_element_registry.dart';
 import 'package:flutter_flow_chart/src/objects/diamond_widget.dart';
 import 'package:flutter_flow_chart/src/objects/hexagon_widget.dart';
 import 'package:flutter_flow_chart/src/objects/image_widget.dart';
@@ -26,6 +27,7 @@ class ElementWidget extends StatefulWidget {
     this.onHandlerSecondaryTapped,
     this.onHandlerLongPressed,
     this.onHandlerSecondaryLongTapped,
+    this.onElementModified,
   });
 
   ///
@@ -80,6 +82,9 @@ class ElementWidget extends StatefulWidget {
     Handler handler,
     FlowElement element,
   )? onHandlerSecondaryLongTapped;
+  
+  /// Callback when the element is modified (moved, resized, etc.)
+  final void Function()? onElementModified;
 
   @override
   State<ElementWidget> createState() => _ElementWidgetState();
@@ -104,6 +109,11 @@ class _ElementWidgetState extends State<ElementWidget> {
 
   void _elementChanged() {
     setState(() {});
+    
+    if (!widget.element.isScaling) {
+      widget.onElementModified?.call();
+      widget.dashboard.notifyElementModified(widget.element);
+    }
   }
 
   @override
@@ -125,6 +135,19 @@ class _ElementWidgetState extends State<ElementWidget> {
         element = RectangleWidget(element: widget.element);
       case ElementKind.image:
         element = ImageWidget(element: widget.element);
+      case ElementKind.custom:
+        final customBuilder = CustomElementRegistry.instance
+            .getBuilder(widget.element.customElementType);
+        if (customBuilder != null) {
+          element = customBuilder(widget.element);
+        } else {
+          // Fallback to rectangle if custom element type is not registered
+          debugPrint(
+            'Warning: Custom element type "${widget.element.customElementType}" '
+            'not found in registry. Falling back to rectangle.',
+          );
+          element = RectangleWidget(element: widget.element);
+        }
     }
 
     if (widget.element.isConnectable && widget.element.handlers.isNotEmpty) {

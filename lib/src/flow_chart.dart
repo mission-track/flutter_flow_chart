@@ -32,59 +32,60 @@ class FlowChart extends StatefulWidget {
     this.onPivotSecondaryPressed,
     this.onScaleUpdate,
     this.onNewConnection,
+    this.onElementModified,
   });
 
-  /// callback for tap on dashboard
+  /// Callback for tap on dashboard
   final void Function(BuildContext context, Offset position)? onDashboardTapped;
 
-  /// callback for long tap on dashboard
+  /// Callback for long tap on dashboard
   final void Function(BuildContext context, Offset position)?
       onDashboardLongTapped;
 
-  /// callback for mouse right click on dashboard
+  /// Callback for mouse right click on dashboard
   final void Function(BuildContext context, Offset postision)?
       onDashboardSecondaryTapped;
 
-  /// callback for mouse right click long press on dashboard
+  /// Callback for mouse right click long press on dashboard
   final void Function(BuildContext context, Offset position)?
       onDashboardSecondaryLongTapped;
 
-  /// callback for element pressed
+  /// Callback for element pressed
   final void Function(
     BuildContext context,
     Offset position,
     FlowElement element,
   )? onElementPressed;
 
-  /// callback for mouse right click event on an element
+  /// Callback for mouse right click event on an element
   final void Function(
     BuildContext context,
     Offset position,
     FlowElement element,
   )? onElementSecondaryTapped;
 
-  /// callback for element long pressed
+  /// Callback for element long pressed
   final void Function(
     BuildContext context,
     Offset position,
     FlowElement element,
   )? onElementLongPressed;
 
-  /// callback for right click long press event on an element
+  /// Callback for right click long press event on an element
   final void Function(
     BuildContext context,
     Offset position,
     FlowElement element,
   )? onElementSecondaryLongTapped;
 
-  /// callback for onclick event of pivot
+  /// Callback for onclick event of pivot
   final void Function(BuildContext context, Pivot pivot)? onPivotPressed;
 
-  /// callback for secondary press event of pivot
+  /// Callback for secondary press event of pivot
   final void Function(BuildContext context, Pivot pivot)?
       onPivotSecondaryPressed;
 
-  /// callback for handler pressed
+  /// Callback for handler pressed
   final void Function(
     BuildContext context,
     Offset position,
@@ -92,7 +93,7 @@ class FlowChart extends StatefulWidget {
     FlowElement element,
   )? onHandlerPressed;
 
-  /// callback for handler right click event
+  /// Callback for handler right click event
   final void Function(
     BuildContext context,
     Offset position,
@@ -100,7 +101,7 @@ class FlowChart extends StatefulWidget {
     FlowElement element,
   )? onHandlerSecondaryTapped;
 
-  /// callback for handler right click long press event
+  /// Callback for handler right click long press event
   final void Function(
     BuildContext context,
     Offset position,
@@ -108,7 +109,7 @@ class FlowChart extends StatefulWidget {
     FlowElement element,
   )? onHandlerSecondaryLongTapped;
 
-  /// callback for handler long pressed
+  /// Callback for handler long pressed
   final void Function(
     BuildContext context,
     Offset position,
@@ -116,10 +117,15 @@ class FlowChart extends StatefulWidget {
     FlowElement element,
   )? onHandlerLongPressed;
 
-  /// callback when adding a new connection
+  /// Callback when adding a new connection
   final ConnectionListener? onNewConnection;
 
-  /// main dashboard to use
+  /// Callback when an element is modified (moved, resized, etc.)
+  /// This callback is only triggered for actual element modifications,
+  /// not for view transformations like zooming, panning, or recentering.
+  final void Function(FlowElement element)? onElementModified;
+
+  /// Main dashboard to use
   final Dashboard dashboard;
 
   /// Trigger for the scale change
@@ -142,6 +148,9 @@ class _FlowChartState extends State<FlowChart> {
     if (widget.onNewConnection != null) {
       widget.dashboard.addConnectionListener(widget.onNewConnection!);
     }
+    if (widget.onElementModified != null) {
+      widget.dashboard.addElementModificationListener(widget.onElementModified!);
+    }
   }
 
   @override
@@ -151,6 +160,12 @@ class _FlowChartState extends State<FlowChart> {
       widget.dashboard.gridBackgroundParams.removeOnScaleUpdateListener(
         widget.onScaleUpdate!,
       );
+    }
+    if (widget.onNewConnection != null) {
+      widget.dashboard.removeConnectionListener(widget.onNewConnection!);
+    }
+    if (widget.onElementModified != null) {
+      widget.dashboard.removeElementModificationListener(widget.onElementModified!);
     }
     super.dispose();
   }
@@ -232,18 +247,12 @@ class _FlowChartState extends State<FlowChart> {
                 widget.dashboard.setDashboardPosition(
                   widget.dashboard.position + details.focalPointDelta,
                 );
-                for (var i = 0; i < widget.dashboard.elements.length; i++) {
-                  widget.dashboard.elements[i].position +=
-                      details.focalPointDelta;
-                  for (final conn in widget.dashboard.elements[i].next) {
-                    for (final pivot in conn.pivots) {
-                      pivot.pivot += details.focalPointDelta;
-                    }
-                  }
+                
+                if (details.focalPointDelta != Offset.zero) {
+                  widget.dashboard.updateElementPositionsForPan(details.focalPointDelta);
                 }
 
-                widget.dashboard.gridBackgroundParams.offset =
-                    details.focalPointDelta;
+                widget.dashboard.gridBackgroundParams.offset = details.focalPointDelta;
                 setState(() {});
               },
               onScaleEnd: (details) {
@@ -323,6 +332,11 @@ class _FlowChartState extends State<FlowChart> {
                             handler,
                             element,
                           ),
+              onElementModified: widget.onElementModified == null
+                  ? null
+                  : () => widget.onElementModified!(
+                        widget.dashboard.elements.elementAt(i),
+                      ),
             ),
           // Draw arrows
           for (int i = 0; i < widget.dashboard.elements.length; i++)
