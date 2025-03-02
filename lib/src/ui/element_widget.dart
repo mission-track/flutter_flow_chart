@@ -84,7 +84,7 @@ class ElementWidget extends StatefulWidget {
   )? onHandlerSecondaryLongTapped;
   
   /// Callback when the element is modified (moved, resized, etc.)
-  final void Function()? onElementModified;
+  final void Function(BuildContext context, FlowElement element)? onElementModified;
 
   @override
   State<ElementWidget> createState() => _ElementWidgetState();
@@ -111,8 +111,8 @@ class _ElementWidgetState extends State<ElementWidget> {
     setState(() {});
     
     if (!widget.element.isScaling) {
-      widget.onElementModified?.call();
-      widget.dashboard.notifyElementModified(widget.element);
+      widget.onElementModified?.call(context, widget.element);
+      widget.dashboard.notifyElementModified(context, widget.element);
     }
   }
 

@@ -20,7 +20,7 @@ typedef ConnectionListener = void Function(
 /// Listener definition for element modification
 /// This listener is only triggered for actual element modifications,
 /// not for view transformations like zooming, panning, or recentering.
-typedef ElementModificationListener = void Function(FlowElement element);
+typedef ElementModificationListener = void Function(BuildContext context, FlowElement element);
 
 /// Class to store all the scene elements.
 /// This also acts as the controller to the flow_chart widget
@@ -140,21 +140,21 @@ class Dashboard extends ChangeNotifier {
   }
   
   /// Notify all element modification listeners
-  void notifyElementModified(FlowElement element) {
+  void notifyElementModified(BuildContext context, FlowElement element) {
     for (final listener in _elementModificationListeners) {
-      listener(element);
+      listener(context, element);
     }
   }
 
   /// Notify all element modification listeners for a batch of elements
   /// This is useful for operations that modify multiple elements at once,
   /// to avoid triggering multiple callbacks for what is logically a single operation.
-  void notifyElementsModified(List<FlowElement> elements) {
+  void notifyElementsModified(BuildContext context, List<FlowElement> elements) {
     if (elements.isEmpty) return;
     
     // If there's only one element, use the single element notification
     if (elements.length == 1) {
-      notifyElementModified(elements.first);
+      notifyElementModified(context, elements.first);
       return;
     }
     
@@ -162,7 +162,7 @@ class Dashboard extends ChangeNotifier {
     for (final listener in _elementModificationListeners) {
       // Call the listener for each element
       for (final element in elements) {
-        listener(element);
+        listener(context, element);
       }
     }
   }

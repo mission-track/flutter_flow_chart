@@ -123,7 +123,7 @@ class FlowChart extends StatefulWidget {
   /// Callback when an element is modified (moved, resized, etc.)
   /// This callback is only triggered for actual element modifications,
   /// not for view transformations like zooming, panning, or recentering.
-  final void Function(FlowElement element)? onElementModified;
+  final void Function(BuildContext context, FlowElement element)? onElementModified;
 
   /// Main dashboard to use
   final Dashboard dashboard;
@@ -334,8 +334,9 @@ class _FlowChartState extends State<FlowChart> {
                           ),
               onElementModified: widget.onElementModified == null
                   ? null
-                  : () => widget.onElementModified!(
-                        widget.dashboard.elements.elementAt(i),
+                  : (context, element) => widget.onElementModified!(
+                        context,
+                        element,
                       ),
             ),
           // Draw arrows
