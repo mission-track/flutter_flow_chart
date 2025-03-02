@@ -32,8 +32,7 @@ class _ElementTextWidgetState extends State<ElementTextWidget> {
     final textStyle = TextStyle(
       color: widget.element.textColor,
       fontSize: widget.element.textSize,
-      fontWeight:
-          widget.element.textIsBold ? FontWeight.bold : FontWeight.normal,
+      fontWeight: widget.element.textIsBold ? FontWeight.bold : FontWeight.normal,
       fontFamily: widget.element.fontFamily,
     );
 

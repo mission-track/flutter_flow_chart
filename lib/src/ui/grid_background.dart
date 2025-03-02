@@ -12,6 +12,7 @@ class GridBackgroundParams extends ChangeNotifier {
     this.backgroundColor = Colors.white,
     this.gridColor = Colors.black12,
     this.backgroundImage,
+    this.backgroundImageSource,
     this.showGrid = true,
     this.imageOpacity = 1.0,
     this.imageFit = BoxFit.cover,
@@ -30,6 +31,7 @@ class GridBackgroundParams extends ChangeNotifier {
       secondarySquareStep: map['secondarySquareStep'] as int? ?? 5,
       backgroundColor: Color(map['backgroundColor'] as int? ?? 0xFFFFFFFF),
       gridColor: Color(map['gridColor'] as int? ?? 0xFFFFFFFF),
+      backgroundImageSource: map['backgroundImageSource'] as String?,
       showGrid: map['showGrid'] as bool? ?? true,
       imageOpacity: map['imageOpacity'] as double? ?? 1.0,
       imageFit: _boxFitFromString(map['imageFit'] as String? ?? 'cover'),
@@ -101,6 +103,9 @@ class GridBackgroundParams extends ChangeNotifier {
 
   /// Background image for the grid
   ui.Image? backgroundImage;
+  
+  /// Source path or URL for the background image
+  String? backgroundImageSource;
 
   /// Whether to show the grid lines
   bool showGrid;
@@ -155,6 +160,12 @@ class GridBackgroundParams extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Set the background image source
+  void setBackgroundImageSource(String source) {
+    backgroundImageSource = source;
+    // notifyListeners();
+  }
+
   /// Set whether to show the grid
   void setShowGrid(bool show) {
     showGrid = show;
@@ -190,6 +201,7 @@ class GridBackgroundParams extends ChangeNotifier {
       'secondarySquareStep': secondarySquareStep,
       'backgroundColor': backgroundColor.value,
       'gridColor': gridColor.value,
+      'backgroundImageSource': backgroundImageSource,
       'showGrid': showGrid,
       'imageOpacity': imageOpacity,
       'imageFit': _boxFitToString(imageFit),
