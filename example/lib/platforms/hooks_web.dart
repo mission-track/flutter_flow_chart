@@ -43,12 +43,11 @@ Future<Uint8List?> pickImageBytes() async {
 }
 
 /// Load image from URL
-Future<ui.Image?> loadImageFromUrl(String url) async {
-  final completer = Completer<ui.Image?>();
-  
+Future<ImageProvider?> loadImageFromUrl(String url) async {
   try {
     // Create an HTML image element
     final imageElement = html.ImageElement();
+    final completer = Completer<ImageProvider?>();
     
     // Set up load event handler before setting src
     imageElement.onLoad.listen((event) async {
@@ -75,10 +74,9 @@ Future<ui.Image?> loadImageFromUrl(String url) async {
           final base64 = dataUrl.split(',')[1];
           final bytes = base64Decode(base64);
           
-          // Create a Flutter image from the bytes
-          final codec = await ui.instantiateImageCodec(bytes);
-          final frameInfo = await codec.getNextFrame();
-          completer.complete(frameInfo.image);
+          // Create a MemoryImage from the bytes
+          completer.complete(MemoryImage(bytes));
+          print('Image loaded successfully');
         } catch (e) {
           print('Error processing canvas data: $e');
           completer.complete(null);

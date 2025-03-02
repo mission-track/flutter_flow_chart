@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -12,10 +13,10 @@ class GridBackgroundParams extends ChangeNotifier {
     this.backgroundColor = Colors.white,
     this.gridColor = Colors.black12,
     this.backgroundImage,
-    this.backgroundImageSource,
     this.showGrid = true,
     this.imageOpacity = 1.0,
     this.imageFit = BoxFit.cover,
+    this.serializedBackgroundImage,
     void Function(double scale)? onScaleUpdate,
   }) : rawGridSquareSize = gridSquare {
     if (onScaleUpdate != null) {
@@ -31,16 +32,20 @@ class GridBackgroundParams extends ChangeNotifier {
       secondarySquareStep: map['secondarySquareStep'] as int? ?? 5,
       backgroundColor: Color(map['backgroundColor'] as int? ?? 0xFFFFFFFF),
       gridColor: Color(map['gridColor'] as int? ?? 0xFFFFFFFF),
-      backgroundImageSource: map['backgroundImageSource'] as String?,
       showGrid: map['showGrid'] as bool? ?? true,
       imageOpacity: map['imageOpacity'] as double? ?? 1.0,
       imageFit: _boxFitFromString(map['imageFit'] as String? ?? 'cover'),
+      serializedBackgroundImage: map['backgroundImage'] as String?,
     )
       ..scale = map['scale'] as double? ?? 1.0
       .._offset = Offset(
         map['offset.dx'] as double? ?? 0.0,
         map['offset.dy'] as double? ?? 0.0,
       );
+
+    if (params.serializedBackgroundImage != null) {
+      params._setBackgroundImageFromSerialized(params.serializedBackgroundImage!);
+    }
 
     return params;
   }
@@ -102,10 +107,10 @@ class GridBackgroundParams extends ChangeNotifier {
   final Color gridColor;
 
   /// Background image for the grid
-  ui.Image? backgroundImage;
-  
-  /// Source path or URL for the background image
-  String? backgroundImageSource;
+  ImageProvider? backgroundImage;
+
+  /// Serialized background image
+  String? serializedBackgroundImage;
 
   /// Whether to show the grid lines
   bool showGrid;
@@ -155,15 +160,20 @@ class GridBackgroundParams extends ChangeNotifier {
   }
 
   /// Set the background image
-  void setBackgroundImage(ui.Image? image) {
-    backgroundImage = image;
+  Future<void> setBackgroundImage(ImageProvider? imageProvider) async {
+    backgroundImage = imageProvider;
     notifyListeners();
-  }
 
-  /// Set the background image source
-  void setBackgroundImageSource(String source) {
-    backgroundImageSource = source;
-    // notifyListeners();
+    if (imageProvider != null) {
+      imageProvider.resolve(ImageConfiguration.empty).addListener(
+        ImageStreamListener(
+          (ImageInfo info, _) async {
+            final imageData = await info.image.toByteData(format: ui.ImageByteFormat.png);
+            serializedBackgroundImage = base64Encode(imageData!.buffer.asUint8List());
+          },
+        ),
+      );
+    }
   }
 
   /// Set whether to show the grid
@@ -201,11 +211,16 @@ class GridBackgroundParams extends ChangeNotifier {
       'secondarySquareStep': secondarySquareStep,
       'backgroundColor': backgroundColor.value,
       'gridColor': gridColor.value,
-      'backgroundImageSource': backgroundImageSource,
       'showGrid': showGrid,
       'imageOpacity': imageOpacity,
       'imageFit': _boxFitToString(imageFit),
+      'backgroundImage': serializedBackgroundImage,
     };
+  }
+
+  Future<void> _setBackgroundImageFromSerialized(String serializedImage) async {
+    backgroundImage = Image.memory(base64Decode(serializedImage)).image;
+    notifyListeners();
   }
 }
 
@@ -228,6 +243,7 @@ class GridBackground extends StatelessWidget {
               params: params,
               dx: params.offset.dx,
               dy: params.offset.dy,
+              repaint: params,
             ),
           ),
         );
@@ -241,11 +257,45 @@ class _GridBackgroundPainter extends CustomPainter {
     required this.params,
     required this.dx,
     required this.dy,
-  });
+    required Listenable repaint,
+  }) : super(repaint: repaint) {
+    _loadImageIfNeeded();
+  }
 
   final GridBackgroundParams params;
   final double dx;
   final double dy;
+  ui.Image? _image;
+  ImageStreamListener? _imageListener;
+
+  void _loadImageIfNeeded() {
+    // Clean up previous listener if exists
+    if (_imageListener != null && params.backgroundImage != null) {
+      params.backgroundImage!.resolve(ImageConfiguration.empty).removeListener(_imageListener!);
+      _imageListener = null;
+    }
+
+    if (params.backgroundImage != null) {
+      final ImageStream imageStream = params.backgroundImage!.resolve(ImageConfiguration.empty);
+      _imageListener = ImageStreamListener(
+        (ImageInfo info, bool synchronousCall) {
+          _image = info.image;
+          if (!synchronousCall) {
+            params.notifyListeners();
+          }
+        },
+        onError: (exception, stackTrace) {
+          print('Error loading image: $exception');
+          _image = null;
+          params.notifyListeners();
+        },
+      );
+      
+      imageStream.addListener(_imageListener!);
+    } else {
+      _image = null;
+    }
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -258,9 +308,9 @@ class _GridBackgroundPainter extends CustomPainter {
       paint,
     );
 
-    // Draw background image if available
-    if (params.backgroundImage != null) {
-      _drawBackgroundImage(canvas, size, params.backgroundImage!);
+    // Draw background image if available and loaded
+    if (_image != null) {
+      _drawBackgroundImage(canvas, size, _image!);
     }
 
     // Only draw grid if showGrid is true
@@ -422,11 +472,23 @@ class _GridBackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GridBackgroundPainter oldDelegate) {
+    // Always clean up the old delegate's image listener
+    if (oldDelegate._imageListener != null && oldDelegate.params.backgroundImage != null) {
+      oldDelegate.params.backgroundImage!.resolve(ImageConfiguration.empty).removeListener(oldDelegate._imageListener!);
+      oldDelegate._imageListener = null;
+    }
+    
+    // If the image provider has changed, load the new image
+    if (oldDelegate.params.backgroundImage != params.backgroundImage) {
+      _loadImageIfNeeded();
+    }
+    
     return oldDelegate.dx != dx || 
            oldDelegate.dy != dy || 
            oldDelegate.params.showGrid != params.showGrid ||
            oldDelegate.params.backgroundImage != params.backgroundImage ||
            oldDelegate.params.imageOpacity != params.imageOpacity ||
-           oldDelegate.params.imageFit != params.imageFit;
+           oldDelegate.params.imageFit != params.imageFit ||
+           oldDelegate._image != _image;
   }
 }

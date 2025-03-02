@@ -31,7 +31,7 @@ Future<Uint8List?> pickImageBytes() async {
 }
 
 /// Load image from URL
-Future<ui.Image?> loadImageFromUrl(String url) async {
+Future<ImageProvider?> loadImageFromUrl(String url) async {
   try {
     // Download the image
     final response = await http.get(Uri.parse(url));
@@ -40,16 +40,9 @@ Future<ui.Image?> loadImageFromUrl(String url) async {
       return null;
     }
     
-    // Decode the image
+    // Return a memory image provider with the downloaded bytes
     final Uint8List bytes = response.bodyBytes;
-    try {
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frameInfo = await codec.getNextFrame();
-      return frameInfo.image;
-    } catch (e) {
-      print('Error decoding image: $e');
-      return null;
-    }
+    return MemoryImage(bytes);
   } catch (e) {
     print('Error loading image from URL: $e');
     return null;

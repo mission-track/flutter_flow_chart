@@ -342,7 +342,6 @@ class _MyHomePageState extends State<MyHomePage> {
     final sampleUrls = [
       'https://images.unsplash.com/photo-1579546929518-9e396f3cc809',
       'https://images.pexels.com/photos/255379/pexels-photo-255379.jpeg',
-      'https://source.unsplash.com/random/1200x800/?nature',
     ];
     
     // Select a random sample URL
