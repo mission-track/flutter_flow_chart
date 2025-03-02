@@ -106,40 +106,52 @@ class FlowElement extends ChangeNotifier {
   ///
   factory FlowElement.fromMap(Map<String, dynamic> map) {
     final e = FlowElement(
-      size: Size(map['size.width'] as double, map['size.height'] as double),
-      text: map['text'] as String,
-      textColor: Color(map['textColor'] as int),
-      fontFamily: map['fontFamily'] as String?,
-      textSize: map['textSize'] as double,
-      textIsBold: map['textIsBold'] as bool,
-      kind: ElementKind.values[map['kind'] as int],
-      handlers: List<Handler>.from(
-        (map['handlers'] as List<dynamic>).map<Handler>(
-          (x) => Handler.values[x as int],
-        ),
+      size: Size(
+        (map['size.width'] as num?)?.toDouble() ?? 0.0,
+        (map['size.height'] as num?)?.toDouble() ?? 0.0,
       ),
-      handlerSize: map['handlerSize'] as double,
-      backgroundColor: Color(map['backgroundColor'] as int),
-      borderColor: Color(map['borderColor'] as int),
-      borderThickness: map['borderThickness'] as double,
-      elevation: map['elevation'] as double,
+      text: (map['text'] as String?) ?? '',
+      textColor: Color((map['textColor'] as int?) ?? Colors.black.value),
+      fontFamily: map['fontFamily'] as String?,
+      textSize: (map['textSize'] as num?)?.toDouble() ?? 24.0,
+      textIsBold: (map['textIsBold'] as bool?) ?? false,
+      kind: map['kind'] != null
+          ? ElementKind.values[map['kind'] as int]
+          : ElementKind.rectangle,
+      handlers: map['handlers'] != null
+          ? List<Handler>.from(
+              (map['handlers'] as List<dynamic>).map<Handler>(
+                (x) => Handler.values[(x as num).toInt()],
+              ),
+            )
+          : const [
+              Handler.topCenter,
+              Handler.bottomCenter,
+              Handler.rightCenter,
+              Handler.leftCenter,
+            ],
+      handlerSize: (map['handlerSize'] as num?)?.toDouble() ?? 15.0,
+      backgroundColor: Color((map['backgroundColor'] as int?) ?? Colors.white.value),
+      borderColor: Color((map['borderColor'] as int?) ?? Colors.blue.value),
+      borderThickness: (map['borderThickness'] as num?)?.toDouble() ?? 3.0,
+      elevation: (map['elevation'] as num?)?.toDouble() ?? 4.0,
       customElementType: map['customElementType'] as String?,
-      next: (map['next'] as List).isNotEmpty
+      next: map['next'] != null && (map['next'] as List).isNotEmpty
           ? List<ConnectionParams>.from(
               (map['next'] as List<dynamic>).map<dynamic>(
                 (x) => ConnectionParams.fromMap(x as Map<String, dynamic>),
               ),
             )
           : [],
-      isDraggable: map['isDraggable'] as bool? ?? true,
-      isResizable: map['isResizable'] as bool? ?? false,
-      isConnectable: map['isConnectable'] as bool? ?? true,
-      isDeletable: map['isDeletable'] as bool? ?? false,
+      isDraggable: (map['isDraggable'] as bool?) ?? true,
+      isResizable: (map['isResizable'] as bool?) ?? false,
+      isConnectable: (map['isConnectable'] as bool?) ?? true,
+      isDeletable: (map['isDeletable'] as bool?) ?? false,
     )
-      ..setId(map['id'] as String)
+      ..setId((map['id'] as String?) ?? const Uuid().v4())
       ..position = Offset(
-        map['positionDx'] as double,
-        map['positionDy'] as double,
+        (map['positionDx'] as num?)?.toDouble() ?? 0.0,
+        (map['positionDy'] as num?)?.toDouble() ?? 0.0,
       )
       ..serializedData = map['data'] as String?;
     return e;
