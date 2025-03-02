@@ -173,6 +173,8 @@ class GridBackgroundParams extends ChangeNotifier {
           },
         ),
       );
+    } else {
+      serializedBackgroundImage = null;
     }
   }
 
