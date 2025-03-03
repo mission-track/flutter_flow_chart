@@ -672,16 +672,16 @@ class Dashboard extends ChangeNotifier {
   }
 
   /// clear the dashboard and load the new one from file [completeFilePath]
-  void loadDashboard(String completeFilePath) {
+  void loadDashboard(String completeFilePath, [bool center = false]) {
     final f = File(completeFilePath);
     if (f.existsSync()) {
       final source = json.decode(f.readAsStringSync()) as Map<String, dynamic>;
-      loadDashboardData(source);
+      loadDashboardData(source, center);
     }
   }
 
   /// clear the dashboard and load the new one from [source] json
-  void loadDashboardData(Map<String, dynamic> source) {
+  void loadDashboardData(Map<String, dynamic> source, [bool center = false]) {
     elements.clear();
 
     gridBackgroundParams = GridBackgroundParams.fromMap(
@@ -703,7 +703,9 @@ class Dashboard extends ChangeNotifier {
       ..clear()
       ..addAll(loadedElements);
 
-    recenter();
+    if (center) {
+      recenter();
+    }
   }
 
   /// Update element positions during panning without triggering modification notifications
