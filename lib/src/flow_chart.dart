@@ -342,16 +342,18 @@ class _FlowChartState extends State<FlowChart> {
           // Draw arrows
           for (int i = 0; i < widget.dashboard.elements.length; i++)
             for (int n = 0; n < widget.dashboard.elements[i].next.length; n++)
-              DrawArrow(
-                key: UniqueKey(),
-                srcElement: widget.dashboard.elements[i],
-                destElement: widget
-                    .dashboard.elements[widget.dashboard.findElementIndexById(
-                  widget.dashboard.elements[i].next[n].destElementId,
-                )],
-                arrowParams: widget.dashboard.elements[i].next[n].arrowParams,
-                pivots: widget.dashboard.elements[i].next[n].pivots,
-              ),
+              if (widget.dashboard.findElementIndexById(
+                widget.dashboard.elements[i].next[n].destElementId,
+              ) != -1)
+                DrawArrow(
+                  key: UniqueKey(),
+                  srcElement: widget.dashboard.elements[i],
+                  destElement: widget.dashboard.elements[widget.dashboard.findElementIndexById(
+                    widget.dashboard.elements[i].next[n].destElementId,
+                  )],
+                  arrowParams: widget.dashboard.elements[i].next[n].arrowParams,
+                  pivots: widget.dashboard.elements[i].next[n].pivots,
+                ),
           // drawing segment handlers
           for (int i = 0; i < widget.dashboard.elements.length; i++)
             for (int n = 0; n < widget.dashboard.elements[i].next.length; n++)
