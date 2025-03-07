@@ -92,6 +92,7 @@ class FlowElement extends ChangeNotifier {
     this.isResizable = false,
     this.isConnectable = true,
     this.isDeletable = false,
+    this.params = const {},
     List<ConnectionParams>? next,
   })  : next = next ?? [],
         id = const Uuid().v4(),
@@ -136,6 +137,7 @@ class FlowElement extends ChangeNotifier {
       borderThickness: (map['borderThickness'] as num?)?.toDouble() ?? 3.0,
       elevation: (map['elevation'] as num?)?.toDouble() ?? 4.0,
       customElementType: map['customElementType'] as String?,
+      params: (map['params'] as Map<String, dynamic>?) ?? {},
       next: map['next'] != null && (map['next'] as List).isNotEmpty
           ? List<ConnectionParams>.from(
               (map['next'] as List<dynamic>).map<dynamic>(
@@ -229,6 +231,9 @@ class FlowElement extends ChangeNotifier {
   
   /// Custom element type identifier for ElementKind.custom
   final String? customElementType;
+
+  /// Additional parameters for custom types
+  final Map<String, dynamic> params;
 
   /// Kind-specific data to load/save
   String? serializedData;
@@ -407,6 +412,7 @@ class FlowElement extends ChangeNotifier {
       'elevation': elevation,
       'data': serializedData,
       'customElementType': customElementType,
+      'params': params,
       'next': next.map((x) => x.toMap()).toList(),
       'isDraggable': isDraggable,
       'isResizable': isResizable,
@@ -417,4 +423,10 @@ class FlowElement extends ChangeNotifier {
 
   ///
   String toJson() => json.encode(toMap());
+
+  /// Update custom parameters
+  void updateParams(Map<String, dynamic> newParams) {
+    params.addAll(newParams);
+    notifyListeners();
+  }
 }
