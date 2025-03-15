@@ -255,7 +255,10 @@ class _FlowChartState extends State<FlowChart> {
 
                   widget.dashboard.gridBackgroundParams.offset = details.focalPointDelta;
                 }
-                setState(() {});
+
+                if (details.scale != 1 || widget.dashboard.allowPanning) {
+                  setState(() {});
+                }
               },
               onScaleEnd: (details) {
                 _oldScaleUpdateDelta = widget.dashboard.zoomFactor - 1;
