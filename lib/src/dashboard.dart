@@ -29,9 +29,10 @@ class Dashboard extends ChangeNotifier {
   ///
   Dashboard({
     Offset? handlerFeedbackOffset,
-    this.blockDefaultZoomGestures = false,
     this.minimumZoomFactor = 0.25,
     this.defaultArrowStyle = ArrowStyle.curve,
+    this.respectScalingFlag = true,
+    this.allowPanning = true,
   })  : elements = [],
         _dashboardPosition = Offset.zero,
         dashboardSize = Size.zero,
@@ -58,6 +59,8 @@ class Dashboard extends ChangeNotifier {
   factory Dashboard.fromMap(Map<String, dynamic> map) {
     final d = Dashboard(
       defaultArrowStyle: ArrowStyle.values[map['arrowStyle'] as int? ?? 0],
+      minimumZoomFactor: map['minimumZoomFactor'] as double? ?? 0.25,
+      respectScalingFlag: map['respectScalingFlag'] as bool? ?? true,
     )
       ..elements = List<FlowElement>.from(
         (map['elements'] as List<dynamic>).map<FlowElement>(
@@ -74,10 +77,6 @@ class Dashboard extends ChangeNotifier {
         map['gridBackgroundParams'] as Map<String, dynamic>,
       );
     }
-    d
-      ..blockDefaultZoomGestures =
-          (map['blockDefaultZoomGestures'] as bool? ?? false)
-      ..minimumZoomFactor = map['minimumZoomFactor'] as double? ?? 0.25;
 
     return d;
   }
@@ -106,14 +105,19 @@ class Dashboard extends ChangeNotifier {
   /// Background parameters.
   GridBackgroundParams gridBackgroundParams;
 
-  ///
-  bool blockDefaultZoomGestures;
-
   /// minimum zoom factor allowed
   /// default is 0.25
   /// setting it to 1 will prevent zooming out
   /// setting it to 0 will remove the limit
   double minimumZoomFactor;
+
+  /// Whether to respect the _isScaling flag when determining if element modifications should be tracked.
+  /// If true (default), element modifications will not be tracked during scaling/view transformations.
+  /// If false, element modifications will be tracked regardless of the _isScaling flag.
+  bool respectScalingFlag;
+
+  /// Whether panning (moving) the graph is allowed
+  final bool allowPanning;
 
   final List<ConnectionListener> _connectionListeners = [];
 
@@ -629,9 +633,9 @@ class Dashboard extends ChangeNotifier {
       'dashboardSizeWidth': dashboardSize.width,
       'dashboardSizeHeight': dashboardSize.height,
       'gridBackgroundParams': gridBackgroundParams.toMap(),
-      'blockDefaultZoomGestures': blockDefaultZoomGestures,
       'minimumZoomFactor': minimumZoomFactor,
       'arrowStyle': defaultArrowStyle.index,
+      'respectScalingFlag': respectScalingFlag,
     };
   }
 
@@ -687,7 +691,6 @@ class Dashboard extends ChangeNotifier {
     gridBackgroundParams = GridBackgroundParams.fromMap(
       source['gridBackgroundParams'] as Map<String, dynamic>,
     );
-    blockDefaultZoomGestures = source['blockDefaultZoomGestures'] as bool;
     minimumZoomFactor = source['minimumZoomFactor'] as double;
     dashboardSize = Size(
       source['dashboardSizeWidth'] as double,

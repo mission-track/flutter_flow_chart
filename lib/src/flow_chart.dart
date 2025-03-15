@@ -244,15 +244,17 @@ class _FlowChartState extends State<FlowChart> {
                   );
                 }
 
-                widget.dashboard.setDashboardPosition(
-                  widget.dashboard.position + details.focalPointDelta,
-                );
-                
-                if (details.focalPointDelta != Offset.zero) {
-                  widget.dashboard.updateElementPositionsForPan(details.focalPointDelta);
-                }
+                if (widget.dashboard.allowPanning) {
+                  widget.dashboard.setDashboardPosition(
+                    widget.dashboard.position + details.focalPointDelta,
+                  );
+                  
+                  if (details.focalPointDelta != Offset.zero) {
+                    widget.dashboard.updateElementPositionsForPan(details.focalPointDelta);
+                  }
 
-                widget.dashboard.gridBackgroundParams.offset = details.focalPointDelta;
+                  widget.dashboard.gridBackgroundParams.offset = details.focalPointDelta;
+                }
                 setState(() {});
               },
               onScaleEnd: (details) {

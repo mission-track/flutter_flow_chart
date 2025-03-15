@@ -110,7 +110,7 @@ class _ElementWidgetState extends State<ElementWidget> {
   void _elementChanged() {
     setState(() {});
     
-    if (!widget.element.isScaling) {
+    if (!widget.element.isScaling || !widget.dashboard.respectScalingFlag) {
       widget.onElementModified?.call(context, widget.element);
       widget.dashboard.notifyElementModified(context, widget.element);
     }
