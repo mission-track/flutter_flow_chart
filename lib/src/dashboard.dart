@@ -627,8 +627,8 @@ class Dashboard extends ChangeNotifier {
 
   //******************************* */
   /// manage load/save using json
-  Map<String, dynamic> toMap() {
-    return <String, dynamic>{
+  Map<String, dynamic> toMap([bool scale = false]) {
+    final map = <String, dynamic>{
       'elements': elements.map((x) => x.toMap()).toList(),
       'dashboardSizeWidth': dashboardSize.width,
       'dashboardSizeHeight': dashboardSize.height,
@@ -637,16 +637,22 @@ class Dashboard extends ChangeNotifier {
       'arrowStyle': defaultArrowStyle.index,
       'respectScalingFlag': respectScalingFlag,
     };
+
+    if (scale) {
+      map['scale'] = gridBackgroundParams.scale;
+    }
+
+    return map;
   }
 
   ///
-  String toJson() => json.encode(toMap());
+  String toJson([bool scale = false]) => json.encode(toMap(scale));
 
   ///
-  String prettyJson() {
+  String prettyJson([bool scale = false]) {
     final spaces = ' ' * 2;
     final encoder = JsonEncoder.withIndent(spaces);
-    return encoder.convert(toMap());
+    return encoder.convert(toMap(scale));
   }
 
   /// recenter the dashboard
@@ -671,21 +677,21 @@ class Dashboard extends ChangeNotifier {
   }
 
   /// save the dashboard into [completeFilePath]
-  void saveDashboard(String completeFilePath) {
-    File(completeFilePath).writeAsStringSync(prettyJson(), flush: true);
+  void saveDashboard(String completeFilePath, [bool scale = false]) {
+    File(completeFilePath).writeAsStringSync(prettyJson(scale), flush: true);
   }
 
   /// clear the dashboard and load the new one from file [completeFilePath]
-  void loadDashboard(String completeFilePath, [bool center = false]) {
+  void loadDashboard(String completeFilePath, [bool center = false, bool scale = false]) {
     final f = File(completeFilePath);
     if (f.existsSync()) {
       final source = json.decode(f.readAsStringSync()) as Map<String, dynamic>;
-      loadDashboardData(source, center);
+      loadDashboardData(source, center, scale);
     }
   }
 
   /// clear the dashboard and load the new one from [source] json
-  void loadDashboardData(Map<String, dynamic> source, [bool center = false]) {
+  void loadDashboardData(Map<String, dynamic> source, [bool center = false, bool scale = false]) {
     elements.clear();
 
     gridBackgroundParams = GridBackgroundParams.fromMap(
@@ -696,6 +702,14 @@ class Dashboard extends ChangeNotifier {
       source['dashboardSizeWidth'] as double,
       source['dashboardSizeHeight'] as double,
     );
+
+    // Restore zoom level if requested and available
+    if (scale && source.containsKey('scale')) {
+      final scale = source['scale'] as double;
+      if (scale >= minimumZoomFactor) {
+        gridBackgroundParams.scale = scale;
+      }
+    }
 
     final loadedElements = List<FlowElement>.from(
       (source['elements'] as List<dynamic>).map<FlowElement>(
